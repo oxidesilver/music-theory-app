@@ -10,7 +10,8 @@ import { LessonPage } from '@/features/learn/LessonPage';
 import { ProgressPage } from '@/features/progress/ProgressPage';
 import { ProgressionPage } from '@/features/progression/ProgressionPage';
 import { LibraryPage } from '@/features/library/LibraryPage';
-import { ComposePage, EarTrainingPage, GenresPage } from '@/features/placeholders';
+import { EarTrainingPage } from '@/features/ear/EarTrainingPage';
+import { ComposePage, GenresPage } from '@/features/placeholders';
 
 export const routes: RouteObject[] = [
   {
@@ -23,7 +24,7 @@ export const routes: RouteObject[] = [
       { path: 'progression', element: <ProgressionPage /> },
       { path: 'progression/:songId', element: <ProgressionPage /> },
       { path: 'chords/:root?/:quality?', element: <ChordDictionaryPage /> },
-      { path: 'ear/*', element: <EarTrainingPage /> },
+      { path: 'ear', element: <EarTrainingPage /> },
       { path: 'compose/*', element: <ComposePage /> },
       { path: 'genres/*', element: <GenresPage /> },
       { path: 'library', element: <LibraryPage /> },

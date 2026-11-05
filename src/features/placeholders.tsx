@@ -3,19 +3,6 @@ import { ComingSoon } from '@/components/ui/ComingSoon';
 import { NAV_ITEMS } from '@/app/navigation';
 
 
-export function EarTrainingPage() {
-  const n = NAV_ITEMS.ear;
-  return (
-    <ComingSoon
-      icon={n.icon}
-      title={n.label}
-      description="音を聴いて、音程・コード・進行を聴き分ける練習です。"
-      phase="Phase 6"
-      features={['レベル1：音程　レベル2：コード　レベル3：コード進行', '毎回ランダムに出題・解説つき', '正答率と苦手な問題の記録']}
-    />
-  );
-}
-
 export function ComposePage() {
   const n = NAV_ITEMS.compose;
   return (
