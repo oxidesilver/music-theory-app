@@ -55,7 +55,7 @@ describe('設定画面のバックアップと復元', () => {
     const json = JSON.parse(await created[0]!.text());
     expect(json.app).toBe('music-theory-app');
     expect(json.data.songs).toHaveLength(1);
-    expect(screen.getByRole('status')).toHaveTextContent('バックアップファイルを作成しました');
+    expect(await screen.findByRole('status')).toHaveTextContent('バックアップファイルを作成しました');
   });
 
   it('ファイルを選ぶと内容の確認が出て、確認するまでデータは変わらない。「置き換え」では事前に自動バックアップされる', async () => {
@@ -79,7 +79,8 @@ describe('設定画面のバックアップと復元', () => {
     // 置き換える前の自動バックアップ
     expect(created).toHaveLength(1);
     expect(JSON.parse(await created[0]!.text()).data.songs).toHaveLength(2);
-    expect(screen.getByRole('status')).toHaveTextContent('復元しました');
+    // 復元のあと、記録の読み込み直しが終わってからメッセージが出るので、表示されるまで待つ
+    expect(await screen.findByRole('status')).toHaveTextContent('復元しました');
   });
 
   it('確認で「キャンセル」するとデータは変わらない', async () => {
