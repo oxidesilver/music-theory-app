@@ -6,6 +6,7 @@ import { useSettings, type InstrumentId, type OctaveConvention, type RomanStyle,
 import { db } from '@/storage/db';
 import { isStoragePersisted } from '@/storage/persist';
 import { audio } from '@/audio/engine';
+import { BackupSection } from './BackupSection';
 
 interface Option<T extends string> {
   value: T;
@@ -63,7 +64,7 @@ function Field({ label, help, children }: { label: string; help?: string; childr
   );
 }
 
-function useStorageInfo() {
+function useStorageInfo(refresh: number) {
   const [info, setInfo] = useState<{ persisted: boolean | null; songs: number; lessons: number } | null>(null);
   useEffect(() => {
     let alive = true;
@@ -78,13 +79,14 @@ function useStorageInfo() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [refresh]);
   return info;
 }
 
 export function SettingsPage() {
   const s = useSettings();
-  const storage = useStorageInfo();
+  const [refresh, setRefresh] = useState(0);
+  const storage = useStorageInfo(refresh);
   const n = NAV_ITEMS.settings;
 
   return (
@@ -192,8 +194,9 @@ export function SettingsPage() {
                     : 'この端末では未対応'}
             </dd>
           </dl>
-          <p className="text-xs text-slate-500 dark:text-slate-400">バックアップの作成・復元は Phase 10 で実装予定です。</p>
         </Card>
+
+        <BackupSection onRestored={() => setRefresh((r) => r + 1)} />
 
         <div className="text-right">
           <button

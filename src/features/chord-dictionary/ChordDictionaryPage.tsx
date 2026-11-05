@@ -118,10 +118,11 @@ export function ChordDictionaryPage() {
         description="ルート（コードの土台になる音）とコードの種類を選ぶと、構成音・響き・使い方を確認できます。"
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-        <div className="space-y-4">
+      {/* スマホでは「コード表示 → 選択欄 → 構成音 → 解説」の順、PC では右側に選択欄 */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_20rem] lg:items-start">
+        <div className="contents lg:block lg:space-y-4">
           {/* コードの表示と再生 */}
-          <Card>
+          <Card className="order-1">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-4xl font-bold tracking-tight" data-testid="chord-symbol">
@@ -198,7 +199,7 @@ export function ChordDictionaryPage() {
           </Card>
 
           {/* 構成音 */}
-          <Card>
+          <Card className="order-3">
             <h2 className="font-bold">構成音</h2>
             <table className="mt-3 w-full text-sm">
               <thead className="text-left text-xs text-slate-500 dark:text-slate-400">
@@ -231,7 +232,7 @@ export function ChordDictionaryPage() {
           </Card>
 
           {/* 解説 */}
-          <Card className="space-y-3 text-sm leading-relaxed">
+          <Card className="order-4 space-y-3 text-sm leading-relaxed">
             <div>
               <h2 className="font-bold">響きの特徴</h2>
               <p className="mt-1">{desc.sound}</p>
@@ -264,7 +265,7 @@ export function ChordDictionaryPage() {
         </div>
 
         {/* 選択パネル */}
-        <div className="space-y-4">
+        <div className="order-2 space-y-4 lg:order-none">
           <Card>
             <h2 className="text-sm font-bold">ルート（土台の音）</h2>
             <div className="mt-2 grid grid-cols-6 gap-1.5 lg:grid-cols-5">

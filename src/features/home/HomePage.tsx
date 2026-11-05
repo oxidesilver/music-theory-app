@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
+import { db } from '@/storage/db';
+import type { Song } from '@/storage/types';
 import { Card } from '@/components/ui/Card';
 import { NAV_ITEMS, SIDE_NAV } from '@/app/navigation';
 import { ALL_LESSONS } from '@/content/lessons/curriculum';
@@ -10,6 +13,16 @@ export function HomePage() {
   const progress = useProgress((s) => s.progress);
   const next = useNextLesson();
   const completed = ALL_LESSONS.filter((l) => progress[l.id]?.status === 'completed').length;
+  const [recent, setRecent] = useState<Song[] | null>(null);
+  useEffect(() => {
+    db.songs
+      .orderBy('updatedAt')
+      .reverse()
+      .limit(3)
+      .toArray()
+      .then(setRecent)
+      .catch(() => setRecent([]));
+  }, []);
 
   return (
     <>
@@ -43,6 +56,38 @@ export function HomePage() {
           {completed === 0 ? '学習をはじめる →' : next ? '続きから学ぶ →' : 'レッスン一覧へ →'}
         </Link>
       </Card>
+
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <Card>
+          <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">最近の作品</h2>
+          {recent === null ? null : recent.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              まだ作品はありません。
+              <Link to="/progression" className="font-semibold text-brand-600 dark:text-brand-400">
+                コード進行を作ってみましょう →
+              </Link>
+            </p>
+          ) : (
+            <ul className="mt-2 space-y-1">
+              {recent.map((s) => (
+                <li key={s.id}>
+                  <Link to={`/compose/${s.id}`} className="flex min-h-10 items-center justify-between gap-2 rounded-lg px-2 hover:bg-slate-50 dark:hover:bg-slate-800">
+                    <span className="truncate text-sm font-medium">{s.title}</span>
+                    <span className="shrink-0 text-xs text-slate-400">{new Date(s.updatedAt).toLocaleDateString('ja-JP')}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card>
+          <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">今日の耳トレ</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">毎日少しずつ聴くのが上達の近道です。10問だけ挑戦してみましょう。</p>
+          <Link to="/ear" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-brand-500 px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10">
+            👂 耳トレーニングへ
+          </Link>
+        </Card>
+      </div>
 
       <h2 className="mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">すべての機能</h2>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
