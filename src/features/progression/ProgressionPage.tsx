@@ -16,6 +16,8 @@ import { COMMON_MAJOR_TONICS, COMMON_MINOR_TONICS, keyName, makeKey, type Musica
 import { formatPitchClass, midiOf, parsePitchClass } from '@/theory/pitch';
 import { romanNumeral } from '@/theory/roman';
 import { useEditor, MAX_BPM, MIN_BPM } from './editorStore';
+import { ExportMidiPanel } from '@/midi/ExportMidiPanel';
+import { sourceFromEditor } from '@/midi/source';
 import {
   DURATION_OPTIONS,
   PRESET_PROGRESSIONS,
@@ -175,6 +177,11 @@ export function ProgressionPage() {
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400" role="status">
           {message ?? (ed.dirty ? '● 保存していない変更があります' : ed.songId ? '保存済み' : '')}
         </p>
+        {ed.chords.length > 0 && (
+          <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+            <ExportMidiPanel source={sourceFromEditor(ed)} compact />
+          </div>
+        )}
       </Card>
 
       {/* キー・テンポ・再生 */}

@@ -84,7 +84,7 @@ describe('メロディー・作曲画面', () => {
 
   it('ベース：コード進行からルート音を自動配置できる', async () => {
     renderAt('/compose');
-    await userEvent.click(screen.getByRole('button', { name: /ベース/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^🎸 ベース/ }));
     await userEvent.click(screen.getByRole('button', { name: 'ルートを伸ばす' }));
     expect(useEditor.getState().bass.map((n) => formatPitch(n.pitch))).toEqual(['C2', 'G2']);
     await userEvent.click(screen.getByRole('button', { name: '全体を1オクターブ上へ' }));
@@ -93,7 +93,7 @@ describe('メロディー・作曲画面', () => {
 
   it('ドラム：定番パターンを選ぶとマス目に反映され、マスを押して切り替えられる', async () => {
     renderAt('/compose');
-    await userEvent.click(screen.getByRole('button', { name: /ドラム/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^🥁 ドラム/ }));
     await userEvent.click(screen.getByRole('button', { name: '4つ打ち' }));
     expect(screen.getByRole('button', { name: 'キック 1' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'キック 2' })).toHaveAttribute('aria-pressed', 'false');
@@ -107,7 +107,7 @@ describe('メロディー・作曲画面', () => {
   it('再生すると、コード・メロディー・ベース・ドラムがまとめて音声エンジンに渡る', async () => {
     renderAt('/compose');
     clickRoll('メロディーのピアノロール', 84, 72);
-    await userEvent.click(screen.getByRole('button', { name: /ドラム/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^🥁 ドラム/ }));
     await userEvent.click(screen.getByRole('button', { name: '8ビート' }));
     await userEvent.click(screen.getByRole('button', { name: '▶ 再生' }));
     const [events, , opts] = vi.mocked(audio.playSequence).mock.calls[0]!;
@@ -119,7 +119,7 @@ describe('メロディー・作曲画面', () => {
   it('保存すると、メロディー・ベース・ドラムも作品に保存され、作曲画面で開き直せる', async () => {
     renderAt('/compose');
     clickRoll('メロディーのピアノロール', 84, 64);
-    await userEvent.click(screen.getByRole('button', { name: /ベース/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^🎸 ベース/ }));
     await userEvent.click(screen.getByRole('button', { name: '4分音符でルート' }));
     await userEvent.click(screen.getByRole('button', { name: '💾 保存' }));
     await waitFor(async () => expect(await db.songs.count()).toBe(1));

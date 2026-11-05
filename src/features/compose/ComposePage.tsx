@@ -44,6 +44,8 @@ import {
 } from './logic';
 import { PianoRoll, RoleLegend } from './PianoRoll';
 import { DrumGrid } from './DrumGrid';
+import { ExportMidiPanel } from '@/midi/ExportMidiPanel';
+import { sourceFromEditor } from '@/midi/source';
 
 type Tab = TrackId | 'drums';
 
@@ -166,6 +168,9 @@ export function ComposePage() {
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400" role="status">
           {message ?? (ed.dirty ? '● 保存していない変更があります' : ed.songId ? '保存済み' : '')}
         </p>
+        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <ExportMidiPanel source={sourceFromEditor(ed)} />
+        </div>
         {ed.chords.length === 0 && (
           <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
             まだコード進行がありません。先に「コード進行を編集」でコードを並べると、コードに合わせた色分けやベースの自動配置が使えます。
@@ -459,7 +464,7 @@ export function ComposePage() {
         )}
       </Card>
       <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-        曲の長さはコード進行の長さ（全 {totalBeats(ed.chords)} 拍）に合わせています（最低4小節）。MIDI ファイルとして FL Studio に持ち込む機能は Phase 8 で追加します。
+        曲の長さはコード進行の長さ（全 {totalBeats(ed.chords)} 拍）に合わせています（最低4小節）。
       </p>
     </>
   );

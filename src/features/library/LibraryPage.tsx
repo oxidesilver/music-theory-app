@@ -10,6 +10,8 @@ import { useSettings } from '@/stores/settingsStore';
 import { formatChordSymbol, type ChordQualityId } from '@/theory/chord';
 import { keyName } from '@/theory/key';
 import { useEditor } from '@/features/progression/editorStore';
+import { downloadMidi, midiBytes, midiFileName } from '@/midi/exportMidi';
+import { sourceFromSong } from '@/midi/source';
 
 export function LibraryPage() {
   const [songs, setSongs] = useState<Song[] | null>(null);
@@ -91,6 +93,13 @@ export function LibraryPage() {
                     <button type="button" onClick={() => navigate(`/compose/${s.id}`)} className="min-h-10 rounded-lg border border-brand-500 px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10">
                       作曲画面で開く
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadMidi(midiBytes(sourceFromSong(s)), midiFileName(s.title))}
+                      className="min-h-10 rounded-lg px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+                    >
+                      ⬇ MIDI
+                    </button>
                     <button type="button" onClick={() => void rename(s)} className="min-h-10 rounded-lg px-3 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
                       名前を変更
                     </button>
@@ -107,7 +116,9 @@ export function LibraryPage() {
           ))}
         </ul>
       )}
-      <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">MIDI ファイルとして書き出す機能は Phase 8 で追加します。</p>
+      <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+        「⬇ MIDI」で、コード・メロディー・ベース・ドラムを4トラックに分けた MIDI ファイルを書き出せます（FL Studio で読み込めます）。パートごとの書き出しは、作曲画面からできます。
+      </p>
     </>
   );
 }
