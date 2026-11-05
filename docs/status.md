@@ -29,8 +29,8 @@
 
 ## ユーザーに確認・お願いが必要なこと
 
-- **GitHub のユーザー名**（未回答）。ローカル Commit は仮の名前（youki / youki@localhost.invalid、このリポジトリ内だけの設定）で記録している。Push 前に、GitHub の noreply アドレスで付け直す。
-- **リポジトリ作成・Push・GitHub Pages 公開の許可**（作業の直前に毎回確認する）。公開リポジトリにする方針で合意済み。
+- GitHub：ユーザー名 oxidesilver、リポジトリ oxidesilver/music-theory-app（公開）。Commit の名前は oxidesilver と GitHub の noreply アドレスに付け直し済み（このリポジトリ内だけの設定）。
+- **Push・GitHub Pages 公開の許可**は、作業の直前に毎回確認する。
 - **FL Studio 21 での MIDI 読み込み確認**：手順は [fl-studio-test/README.md](fl-studio-test/README.md)。
 - 教材の文章・ジャンル内容・音色についての感想（任意）。
 
