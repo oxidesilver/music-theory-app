@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { SideNav } from './SideNav';
 import { BottomNav } from './BottomNav';
 import { useApplyTheme } from '@/app/useApplyTheme';
+import { useAudioSettings } from '@/audio/useAudioSettings';
 
 /**
  * アプリ全体の枠組み。
@@ -11,6 +12,7 @@ import { useApplyTheme } from '@/app/useApplyTheme';
  */
 export function AppLayout() {
   useApplyTheme();
+  useAudioSettings();
   const { pathname } = useLocation();
 
   // 画面を移動したら一番上までスクロールを戻す

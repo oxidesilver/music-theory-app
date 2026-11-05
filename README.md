@@ -20,5 +20,13 @@ PowerShell で、このフォルダ（`D:\music app`）を開いた状態で実�
 
 ## 技術
 
-React / TypeScript / Vite / Tailwind CSS / React Router / Zustand / Dexie（IndexedDB）/ vite-plugin-pwa / Vitest。
-（Phase 3 以降で Tone.js・@tonejs/midi を追加予定）
+React / TypeScript / Vite / Tailwind CSS / React Router / Zustand / Dexie（IndexedDB）/ vite-plugin-pwa / Tone.js / Vitest。
+（Phase 8 で @tonejs/midi を追加予定）
+
+## フォルダの中身（主なもの）
+
+- `src/theory/` … 音楽理論エンジン（音名・音程・スケール・コード・ローマ数字・分析）。テストは `src/theory/__tests__/`
+- `src/audio/` … 共通の音声エンジン（Tone.js）
+- `src/components/PianoKeyboard/` … 全画面で使うピアノ鍵盤
+- `src/content/` … 解説文などの教材データ
+- `src/features/` … 各画面

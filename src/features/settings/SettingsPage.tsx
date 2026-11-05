@@ -5,6 +5,7 @@ import { NAV_ITEMS } from '@/app/navigation';
 import { useSettings, type InstrumentId, type OctaveConvention, type RomanStyle, type ThemeSetting } from '@/stores/settingsStore';
 import { db } from '@/storage/db';
 import { isStoragePersisted } from '@/storage/persist';
+import { audio } from '@/audio/engine';
 
 interface Option<T extends string> {
   value: T;
@@ -105,14 +106,17 @@ export function SettingsPage() {
               ]}
             />
           </Field>
-          <Field label="ローマ数字の書き方" help="コード進行を「Ⅰ・Ⅳ・Ⅴ」のような数字で表すときの書き方です。">
+          <Field
+            label="コード名・ローマ数字の書き方"
+            help="コード名と、コード進行を「Ⅰ・Ⅳ・Ⅴ」のような数字で表すときの書き方です。"
+          >
             <Segmented<RomanStyle>
-              name="ローマ数字の書き方"
+              name="コード名・ローマ数字の書き方"
               value={s.romanStyle}
               onChange={(romanStyle) => s.update({ romanStyle })}
               options={[
-                { value: 'japanese', label: '日本式', hint: '例：Ⅵm・Ⅳ△7' },
-                { value: 'english', label: '英米式', hint: '例：vi・IVmaj7' },
+                { value: 'japanese', label: '日本式', hint: '例：C△7・Ⅵm・Ⅳ△7' },
+                { value: 'english', label: '英米式', hint: '例：Cmaj7・vi・IVmaj7' },
               ]}
             />
           </Field>
@@ -143,7 +147,14 @@ export function SettingsPage() {
               className="w-full accent-brand-600"
             />
           </Field>
-          <Field label="基本の音色" help="実際の音は Phase 3（音声エンジン）から鳴るようになります。">
+          <Field label="基本の音色" help="鍵盤をタップしたときなどに使う音色です。">
+            <button
+              type="button"
+              onClick={() => void audio.play([60, 64, 67], { duration: 1.2 })}
+              className="mb-2 min-h-10 rounded-lg border border-brand-500 px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
+            >
+              ▶ 試しに鳴らす
+            </button>
             <Segmented<InstrumentId>
               name="基本の音色"
               value={s.instrument}

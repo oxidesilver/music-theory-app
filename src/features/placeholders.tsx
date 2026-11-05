@@ -20,19 +20,6 @@ export function LearnPage() {
   );
 }
 
-export function ChordDictionaryPage() {
-  const n = NAV_ITEMS.chords;
-  return (
-    <ComingSoon
-      icon={n.icon}
-      title={n.label}
-      description="コードの構成音・響き・使い方を調べられます。"
-      phase="Phase 3"
-      features={['17種類のコード×12のルート音', '構成音を鍵盤で表示して音を再生', '転回形・音の配置の確認']}
-    />
-  );
-}
-
 export function ProgressionPage() {
   const n = NAV_ITEMS.progression;
   return (

@@ -4,8 +4,8 @@ import { HomePage } from '@/features/home/HomePage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { MorePage } from '@/features/more/MorePage';
 import { NotFoundPage } from '@/features/NotFoundPage';
+import { ChordDictionaryPage } from '@/features/chord-dictionary/ChordDictionaryPage';
 import {
-  ChordDictionaryPage,
   ComposePage,
   EarTrainingPage,
   GenresPage,
@@ -23,7 +23,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'learn/*', element: <LearnPage /> },
       { path: 'progression/*', element: <ProgressionPage /> },
-      { path: 'chords/*', element: <ChordDictionaryPage /> },
+      { path: 'chords/:root?/:quality?', element: <ChordDictionaryPage /> },
       { path: 'ear/*', element: <EarTrainingPage /> },
       { path: 'compose/*', element: <ComposePage /> },
       { path: 'genres/*', element: <GenresPage /> },
