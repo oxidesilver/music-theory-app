@@ -8,7 +8,9 @@ import { ChordDictionaryPage } from '@/features/chord-dictionary/ChordDictionary
 import { LearnPage } from '@/features/learn/LearnPage';
 import { LessonPage } from '@/features/learn/LessonPage';
 import { ProgressPage } from '@/features/progress/ProgressPage';
-import { ComposePage, EarTrainingPage, GenresPage, LibraryPage, ProgressionPage } from '@/features/placeholders';
+import { ProgressionPage } from '@/features/progression/ProgressionPage';
+import { LibraryPage } from '@/features/library/LibraryPage';
+import { ComposePage, EarTrainingPage, GenresPage } from '@/features/placeholders';
 
 export const routes: RouteObject[] = [
   {
@@ -18,7 +20,8 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'learn', element: <LearnPage /> },
       { path: 'learn/:lessonId', element: <LessonPage /> },
-      { path: 'progression/*', element: <ProgressionPage /> },
+      { path: 'progression', element: <ProgressionPage /> },
+      { path: 'progression/:songId', element: <ProgressionPage /> },
       { path: 'chords/:root?/:quality?', element: <ChordDictionaryPage /> },
       { path: 'ear/*', element: <EarTrainingPage /> },
       { path: 'compose/*', element: <ComposePage /> },

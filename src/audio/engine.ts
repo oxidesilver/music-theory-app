@@ -133,9 +133,13 @@ class AudioEngine {
 
   /**
    * コード進行などを BPM に合わせて再生する。戻り値は全体の長さ（秒）。
-   * ループ再生や再生位置の表示は Phase 5 で追加する。
+   * loop を指定すると、lengthBeats 拍ごとに最初から繰り返す（停止するまで続く）。
    */
-  async playSequence(events: SequenceEvent[], bpm: number): Promise<number> {
+  async playSequence(
+    events: SequenceEvent[],
+    bpm: number,
+    opts: { loop?: boolean; lengthBeats?: number } = {},
+  ): Promise<number> {
     const notes = events.map((e) => ({
       midis: e.midis,
       at: beatsToSeconds(e.startBeat, bpm),
@@ -143,12 +147,13 @@ class AudioEngine {
       instrument: e.instrument,
       velocity: e.velocity,
     }));
-    await this.schedule(notes);
-    return Math.max(0, ...notes.map((n) => n.at + n.duration));
+    const length = opts.lengthBeats !== undefined ? beatsToSeconds(opts.lengthBeats, bpm) : undefined;
+    await this.schedule(notes, opts.loop && length ? length : undefined);
+    return length ?? Math.max(0, ...notes.map((n) => n.at + n.duration));
   }
 
-  /** 前の再生を止めてから、音を予約して鳴らす */
-  private async schedule(notes: TimedNote[]): Promise<void> {
+  /** 前の再生を止めてから、音を予約して鳴らす。loopSeconds があればその長さで繰り返す */
+  private async schedule(notes: TimedNote[], loopSeconds?: number): Promise<void> {
     const Tone = await this.unlock();
     this.stop(false);
     const transport = Tone.getTransport();
@@ -157,12 +162,30 @@ class AudioEngine {
       const freqs = n.midis.map((m) => midiToFrequency(m));
       transport.schedule((time) => inst.triggerAttackRelease(freqs, n.duration, time, n.velocity ?? 0.8), n.at);
     }
+    if (loopSeconds) {
+      transport.loop = true;
+      transport.loopStart = 0;
+      transport.loopEnd = loopSeconds;
+    } else {
+      transport.loop = false;
+    }
     transport.start(Tone.now() + 0.03, 0);
-    const total = Math.max(...notes.map((n) => n.at + n.duration));
-    this.playingUntil = Tone.now() + total + 0.03;
-    this.emit();
     window.clearTimeout(this.endTimer);
-    this.endTimer = window.setTimeout(() => this.emit(), total * 1000 + 100);
+    if (loopSeconds) {
+      this.playingUntil = Number.POSITIVE_INFINITY;
+    } else {
+      const total = Math.max(...notes.map((n) => n.at + n.duration));
+      this.playingUntil = Tone.now() + total + 0.03;
+      this.endTimer = window.setTimeout(() => this.emit(), total * 1000 + 100);
+    }
+    this.emit();
+  }
+
+  /** 再生位置（秒）。ループ中は繰り返しの中での位置。再生していなければ null */
+  get positionSeconds(): number | null {
+    if (!this.tone || !this.isPlaying) return null;
+    const transport = this.tone.getTransport();
+    return transport.state === 'started' ? transport.seconds : null;
   }
 
   /** すべての音を止める */
@@ -172,6 +195,7 @@ class AudioEngine {
     const transport = Tone.getTransport();
     transport.stop();
     transport.cancel(0);
+    transport.loop = false;
     for (const inst of this.instruments.values()) inst.releaseAll();
     this.playingUntil = 0;
     window.clearTimeout(this.endTimer);

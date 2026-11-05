@@ -3,19 +3,6 @@ import { ComingSoon } from '@/components/ui/ComingSoon';
 import { NAV_ITEMS } from '@/app/navigation';
 
 
-export function ProgressionPage() {
-  const n = NAV_ITEMS.progression;
-  return (
-    <ComingSoon
-      icon={n.icon}
-      title={n.label}
-      description="キーを選んでコードを並べ、再生・保存できます。"
-      phase="Phase 5"
-      features={['ローマ数字とコードの役割を表示', 'BPM・ループ再生・音量調整', '次に使えるコードの候補', 'MIDI出力（Phase 8）']}
-    />
-  );
-}
-
 export function EarTrainingPage() {
   const n = NAV_ITEMS.ear;
   return (
@@ -55,16 +42,4 @@ export function GenresPage() {
   );
 }
 
-export function LibraryPage() {
-  const n = NAV_ITEMS.library;
-  return (
-    <ComingSoon
-      icon={n.icon}
-      title={n.label}
-      description="作ったコード進行や曲の一覧です。"
-      phase="Phase 5"
-      features={['作品の一覧・複製・削除', '作曲画面で開き直す', 'MIDIファイルとして書き出し']}
-    />
-  );
-}
 

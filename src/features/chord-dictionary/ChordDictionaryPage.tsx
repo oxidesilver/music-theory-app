@@ -35,6 +35,7 @@ import {
 } from '@/theory/pitch';
 import { SCALES, scaleNotes } from '@/theory/scale';
 import { useFavorites } from './useFavorites';
+import { useEditor } from '@/features/progression/editorStore';
 
 const ROOT_OPTIONS = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
 
@@ -170,6 +171,16 @@ export function ChordDictionaryPage() {
                 className="min-h-11 rounded-xl border border-brand-500 px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
               >
                 ♪ 1音ずつ鳴らす
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  useEditor.getState().add({ root, quality }, 4);
+                  navigate('/progression');
+                }}
+                className="min-h-11 rounded-xl px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
+              >
+                ＋ コード進行に追加
               </button>
               {playing && (
                 <button
