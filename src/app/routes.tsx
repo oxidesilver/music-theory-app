@@ -12,7 +12,7 @@ import { ProgressionPage } from '@/features/progression/ProgressionPage';
 import { LibraryPage } from '@/features/library/LibraryPage';
 import { EarTrainingPage } from '@/features/ear/EarTrainingPage';
 import { ComposePage } from '@/features/compose/ComposePage';
-import { GenresPage } from '@/features/placeholders';
+import { GenresPage } from '@/features/genres/GenresPage';
 
 export const routes: RouteObject[] = [
   {
@@ -28,7 +28,8 @@ export const routes: RouteObject[] = [
       { path: 'ear', element: <EarTrainingPage /> },
       { path: 'compose', element: <ComposePage /> },
       { path: 'compose/:songId', element: <ComposePage /> },
-      { path: 'genres/*', element: <GenresPage /> },
+      { path: 'genres', element: <GenresPage /> },
+      { path: 'genres/:genreId', element: <GenresPage /> },
       { path: 'library', element: <LibraryPage /> },
       { path: 'progress', element: <ProgressPage /> },
       { path: 'settings', element: <SettingsPage /> },

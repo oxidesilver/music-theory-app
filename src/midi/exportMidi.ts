@@ -7,8 +7,8 @@ import { Midi } from '@tonejs/midi';
 import { PPQ, type DrumEvent, type NoteEvent } from '@/storage/types';
 import type { MusicalKey } from '@/theory/key';
 import { midiOf } from '@/theory/pitch';
-import { chordVoicing, type ProgressionChord } from '@/features/progression/logic';
-import { chordSpans } from '@/features/compose/logic';
+import type { ProgressionChord } from '@/features/progression/logic';
+import { chordHits, type ChordRhythm } from '@/features/compose/logic';
 
 export type PartId = 'chord' | 'melody' | 'bass' | 'drums';
 
@@ -30,6 +30,8 @@ export interface MidiSource {
   melody: NoteEvent[];
   bass: NoteEvent[];
   drums: DrumEvent[];
+  /** コードの鳴らし方（省略時は伸ばす） */
+  chordRhythm?: ChordRhythm;
 }
 
 const velocity = (v: number) => Math.min(1, Math.max(0, v / 127));
@@ -54,10 +56,8 @@ export function buildMidi(src: MidiSource, parts: PartId[] = ALL_PARTS): Midi {
     if (part !== 'drums') track.instrument.number = info.program;
 
     if (part === 'chord') {
-      for (const span of chordSpans(src.chords)) {
-        for (const p of chordVoicing(span.chord)) {
-          track.addNote({ midi: midiOf(p), ticks: span.start, durationTicks: span.end - span.start, velocity: 0.7 });
-        }
+      for (const hit of chordHits(src.chords, src.chordRhythm)) {
+        for (const m of hit.midis) track.addNote({ midi: m, ticks: hit.start, durationTicks: hit.duration, velocity: 0.7 });
       }
     } else if (part === 'drums') {
       for (const d of src.drums) track.addNote({ midi: d.drum, ticks: d.startTick, durationTicks: d.durationTick, velocity: velocity(d.velocity) });

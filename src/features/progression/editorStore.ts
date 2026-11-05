@@ -6,6 +6,7 @@ import { makeKey, spellInKey, type MusicalKey } from '@/theory/key';
 import { midiOf, semitoneOf } from '@/theory/pitch';
 import type { ChordQualityId, ChordSpec } from '@/theory/chord';
 import { makeChord, transposeChords, type ProgressionChord } from './logic';
+import type { ChordRhythm } from '@/features/compose/logic';
 
 // 編集中のコード進行（画面を移動しても内容を保つため、ストアに置く）
 
@@ -19,6 +20,8 @@ export interface EditorState {
   melody: NoteEvent[];
   bass: NoteEvent[];
   drums: DrumEvent[];
+  /** コードの鳴らし方 */
+  chordRhythm: ChordRhythm;
   selected: number | null;
   dirty: boolean;
   /** 読み込んだ作品（作成日時などを保存時に引き継ぐ） */
@@ -26,6 +29,9 @@ export interface EditorState {
 
   setTrack: (track: 'melody' | 'bass', notes: NoteEvent[]) => void;
   setDrums: (events: DrumEvent[]) => void;
+  setChordRhythm: (r: ChordRhythm) => void;
+  /** 作品をまるごと置き換える（ジャンル講座のサンプルから作曲を始めるときなど） */
+  replaceSong: (data: Pick<EditorState, 'title' | 'key' | 'bpm' | 'chords' | 'melody' | 'bass' | 'drums' | 'chordRhythm'>) => void;
 
   setTitle: (t: string) => void;
   setKey: (k: MusicalKey, transpose: boolean) => void;
@@ -57,6 +63,7 @@ const initial = () => ({
   melody: [] as NoteEvent[],
   bass: [] as NoteEvent[],
   drums: [] as DrumEvent[],
+  chordRhythm: 'sustain' as ChordRhythm,
   selected: null,
   dirty: false,
   base: null,
@@ -114,6 +121,8 @@ export const useEditor = create<EditorState>()((set, get) => ({
     })),
   setTrack: (track, notes) => set({ [track]: [...notes].sort((a, b) => a.startTick - b.startTick), dirty: true } as Partial<EditorState>),
   setDrums: (drums) => set({ drums, dirty: true }),
+  setChordRhythm: (chordRhythm) => set({ chordRhythm, dirty: true }),
+  replaceSong: (data) => set({ ...initial(), ...data, dirty: true }),
   setBpm: (bpm) => set({ bpm: Math.round(Math.min(MAX_BPM, Math.max(MIN_BPM, bpm))), dirty: true }),
   select: (selected) => set({ selected }),
   add: (spec, durationBeats = 4) =>
@@ -161,6 +170,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
       melody: song.melody,
       bass: song.bass,
       drums: song.drums ?? [],
+      chordRhythm: (['sustain', 'quarter', 'offbeat'].includes(song.chordRhythm ?? '') ? song.chordRhythm : 'sustain') as ChordRhythm,
       selected: null,
       dirty: false,
       base: song,
@@ -182,6 +192,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
       melody: s.melody,
       bass: s.bass,
       drums: s.drums,
+      chordRhythm: s.chordRhythm,
       instruments: s.base?.instruments ?? { chord: 'piano', melody: 'synth', bass: 'bass' },
       createdAt: s.base?.createdAt ?? now,
       updatedAt: now,

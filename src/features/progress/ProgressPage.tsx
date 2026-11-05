@@ -7,6 +7,8 @@ import { ALL_LESSONS, CHAPTERS, findLesson } from '@/content/lessons/curriculum'
 import { quizStatsByQuestion, useProgress } from '@/stores/progressStore';
 import { accuracyByLevel, accuracyByType, useEarRecords, weakItems } from '@/features/ear/stats';
 import { LEVEL_INFO, QUESTION_TYPES } from '@/features/ear/questions';
+import { GENRES, GENRE_ITEMS } from '@/content/genres';
+import { useGenreProgress } from '@/features/genres/logic';
 
 export function ProgressPage() {
   const { progress, quizResults, load, loaded } = useProgress();
@@ -17,6 +19,11 @@ export function ProgressPage() {
   useEffect(() => {
     if (!ear.loaded) void ear.load();
   }, [ear.loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  const genre = useGenreProgress();
+  useEffect(() => {
+    if (!genre.loaded) void genre.load();
+  }, [genre.loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  const genreProgress = genre.progress;
   const earRecords = ear.records;
   const earByLevel = accuracyByLevel(earRecords);
   const earByType = accuracyByType(earRecords);
@@ -125,6 +132,25 @@ export function ProgressPage() {
           </ul>
         )}
       </Card>
+      <Card className="mt-4">
+        <h2 className="font-bold">ジャンル別作曲講座</h2>
+        <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+          {GENRES.map((g) => {
+            const done = genreProgress[g.id]?.completedItems.length ?? 0;
+            return (
+              <li key={g.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/60">
+                <Link to={`/genres/${g.id}`} className="hover:text-brand-600 dark:hover:text-brand-400">
+                  {g.icon} {g.name}
+                </Link>
+                <span className="text-xs text-slate-500">
+                  {done} / {GENRE_ITEMS.length}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+
       <Card className="mt-4">
         <h2 className="font-bold">耳トレーニング</h2>
         {earRecords.length === 0 ? (

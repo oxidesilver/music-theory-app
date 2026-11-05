@@ -47,6 +47,8 @@ export interface Song {
   melody: NoteEvent[];
   bass: NoteEvent[];
   drums: DrumEvent[];
+  /** コードの鳴らし方（'sustain' | 'quarter' | 'offbeat'）。古い作品には無いので省略可（＝伸ばす） */
+  chordRhythm?: string;
   instruments: { chord: string; melody: string; bass: string };
   createdAt: string;
   updatedAt: string;

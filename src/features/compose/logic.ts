@@ -185,7 +185,8 @@ export function emptyPattern(): DrumPattern {
   return DRUM_LANES.map(() => Array.from({ length: STEPS_PER_BAR }, () => false));
 }
 
-function patternFrom(steps: Partial<Record<number, number[]>>): DrumPattern {
+/** 「どのドラムを何ステップ目に鳴らすか」から1小節のパターンを作る（例：{ 36: [0, 4, 8, 12] }） */
+export function patternFrom(steps: Partial<Record<number, number[]>>): DrumPattern {
   return DRUM_LANES.map((l) => Array.from({ length: STEPS_PER_BAR }, (_, i) => (steps[l.drum] ?? []).includes(i)));
 }
 
@@ -253,14 +254,48 @@ export interface PlaybackOptions {
 
 const tickToBeat = (t: number) => t / TICKS_PER_BEAT;
 
+// ---- コードの鳴らし方 ----
+
+/** sustain = コードの長さだけ伸ばす、quarter = 1拍ずつ刻む、offbeat = 拍の裏（8分の裏）で短く鳴らす（裏打ち） */
+export type ChordRhythm = 'sustain' | 'quarter' | 'offbeat';
+
+export const CHORD_RHYTHMS: { id: ChordRhythm; label: string; description: string }[] = [
+  { id: 'sustain', label: '伸ばす', description: 'コードの長さだけ音を伸ばします。もっとも基本の鳴らし方です。' },
+  { id: 'quarter', label: '4分で刻む', description: '1拍ごとにコードを鳴らします。ピアノやギターの基本的な伴奏です。' },
+  { id: 'offbeat', label: '裏打ち', description: '拍の裏（「1と2と」の「と」）で短く鳴らします。レゲエ系の「スカンク」やハウスの裏打ちに使われます。' },
+];
+
+export interface ChordHit {
+  midis: number[];
+  start: number;
+  duration: number;
+}
+
+/** コード進行を、鳴らし方に合わせた「音の塊」に分ける（再生と MIDI 出力の両方で使う） */
+export function chordHits(chords: ProgressionChord[], rhythm: ChordRhythm = 'sustain'): ChordHit[] {
+  const hits: ChordHit[] = [];
+  for (const s of chordSpans(chords)) {
+    const midis = chordVoicing(s.chord).map(midiOf);
+    if (rhythm === 'sustain') {
+      hits.push({ midis, start: s.start, duration: s.end - s.start });
+      continue;
+    }
+    for (let beat = s.start; beat < s.end; beat += TICKS_PER_BEAT) {
+      if (rhythm === 'quarter') hits.push({ midis, start: beat, duration: Math.round(TICKS_PER_BEAT * 0.9) });
+      else hits.push({ midis, start: beat + TICKS_PER_BEAT / 2, duration: TICKS_PER_BEAT / 4 });
+    }
+  }
+  return hits;
+}
+
 export function compositionSequence(
-  data: { chords: ProgressionChord[]; melody: NoteEvent[]; bass: NoteEvent[]; drums: DrumEvent[] },
+  data: { chords: ProgressionChord[]; melody: NoteEvent[]; bass: NoteEvent[]; drums: DrumEvent[]; chordRhythm?: ChordRhythm },
   on: PlaybackOptions,
 ): SequenceEvent[] {
   const events: SequenceEvent[] = [];
   if (on.chords) {
-    for (const s of chordSpans(data.chords)) {
-      events.push({ midis: chordVoicing(s.chord).map(midiOf), startBeat: tickToBeat(s.start), durationBeats: tickToBeat(s.end - s.start), velocity: 0.5 });
+    for (const h of chordHits(data.chords, data.chordRhythm)) {
+      events.push({ midis: h.midis, startBeat: tickToBeat(h.start), durationBeats: tickToBeat(h.duration), velocity: 0.5 });
     }
   }
   if (on.melody) for (const n of data.melody) events.push({ midis: [midiOf(n.pitch)], startBeat: tickToBeat(n.startTick), durationBeats: tickToBeat(n.durationTick), instrument: 'synth', velocity: n.velocity / 127 });

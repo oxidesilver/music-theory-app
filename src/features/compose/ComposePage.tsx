@@ -19,6 +19,7 @@ import { useEditor } from '@/features/progression/editorStore';
 import { totalBeats } from '@/features/progression/logic';
 import {
   BASS_PATTERNS,
+  CHORD_RHYTHMS,
   DRUM_PRESETS,
   DRUM_TICKS,
   ROLE_HELP,
@@ -111,7 +112,7 @@ export function ComposePage() {
   const play = () => {
     // ドラムは1小節目のパターンを、今の曲の長さに合わせて並べ直してから鳴らす
     const drums = ed.drums.length > 0 ? patternToEvents(pattern, lengthTicks) : [];
-    const events = compositionSequence({ chords: ed.chords, melody: ed.melody, bass: ed.bass, drums }, on);
+    const events = compositionSequence({ chords: ed.chords, melody: ed.melody, bass: ed.bass, drums, chordRhythm: ed.chordRhythm }, on);
     if (events.length === 0) return;
     void audio.playSequence(events, ed.bpm, { loop, lengthBeats: lengthTicks / TICKS_PER_BEAT });
   };
@@ -206,6 +207,14 @@ export function ComposePage() {
             <label key={k} className="flex items-center gap-1 text-sm">
               <input type="checkbox" checked={on[k]} onChange={(e) => setOn({ ...on, [k]: e.target.checked })} /> {label}
             </label>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 text-sm">
+          <span className="text-xs text-slate-500">コードの鳴らし方：</span>
+          {CHORD_RHYTHMS.map((r) => (
+            <ChoiceButton key={r.id} selected={ed.chordRhythm === r.id} onClick={() => ed.setChordRhythm(r.id)} title={r.description}>
+              {r.label}
+            </ChoiceButton>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm">
