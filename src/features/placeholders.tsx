@@ -2,23 +2,6 @@
 import { ComingSoon } from '@/components/ui/ComingSoon';
 import { NAV_ITEMS } from '@/app/navigation';
 
-export function LearnPage() {
-  const n = NAV_ITEMS.learn;
-  return (
-    <ComingSoon
-      icon={n.icon}
-      title={n.label}
-      description="完全初心者向けに、第1章〜第9章を順番に学べます。"
-      phase="Phase 4"
-      features={[
-        '理論の説明・図解・ピアノ鍵盤での表示',
-        '実際の音を鳴らして響きを確認',
-        'DTM（FL Studio）での活用方法',
-        '理解度確認クイズと進捗の保存',
-      ]}
-    />
-  );
-}
 
 export function ProgressionPage() {
   const n = NAV_ITEMS.progression;
@@ -85,15 +68,3 @@ export function LibraryPage() {
   );
 }
 
-export function ProgressPage() {
-  const n = NAV_ITEMS.progress;
-  return (
-    <ComingSoon
-      icon={n.icon}
-      title={n.label}
-      description="学習の進み具合と耳トレの成績を確認できます。"
-      phase="Phase 4"
-      features={['章ごとの進捗', 'クイズ・耳トレの正答率', '苦手な問題の一覧']}
-    />
-  );
-}

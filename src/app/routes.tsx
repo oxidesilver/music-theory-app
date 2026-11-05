@@ -5,15 +5,10 @@ import { SettingsPage } from '@/features/settings/SettingsPage';
 import { MorePage } from '@/features/more/MorePage';
 import { NotFoundPage } from '@/features/NotFoundPage';
 import { ChordDictionaryPage } from '@/features/chord-dictionary/ChordDictionaryPage';
-import {
-  ComposePage,
-  EarTrainingPage,
-  GenresPage,
-  LearnPage,
-  LibraryPage,
-  ProgressionPage,
-  ProgressPage,
-} from '@/features/placeholders';
+import { LearnPage } from '@/features/learn/LearnPage';
+import { LessonPage } from '@/features/learn/LessonPage';
+import { ProgressPage } from '@/features/progress/ProgressPage';
+import { ComposePage, EarTrainingPage, GenresPage, LibraryPage, ProgressionPage } from '@/features/placeholders';
 
 export const routes: RouteObject[] = [
   {
@@ -21,7 +16,8 @@ export const routes: RouteObject[] = [
     element: <AppLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'learn/*', element: <LearnPage /> },
+      { path: 'learn', element: <LearnPage /> },
+      { path: 'learn/:lessonId', element: <LessonPage /> },
       { path: 'progression/*', element: <ProgressionPage /> },
       { path: 'chords/:root?/:quality?', element: <ChordDictionaryPage /> },
       { path: 'ear/*', element: <EarTrainingPage /> },

@@ -4,6 +4,7 @@ import { SideNav } from './SideNav';
 import { BottomNav } from './BottomNav';
 import { useApplyTheme } from '@/app/useApplyTheme';
 import { useAudioSettings } from '@/audio/useAudioSettings';
+import { useProgress } from '@/stores/progressStore';
 
 /**
  * アプリ全体の枠組み。
@@ -13,6 +14,10 @@ import { useAudioSettings } from '@/audio/useAudioSettings';
 export function AppLayout() {
   useApplyTheme();
   useAudioSettings();
+  const loadProgress = useProgress((s) => s.load);
+  useEffect(() => {
+    void loadProgress();
+  }, [loadProgress]);
   const { pathname } = useLocation();
 
   // 画面を移動したら一番上までスクロールを戻す
