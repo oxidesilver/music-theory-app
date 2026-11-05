@@ -2,20 +2,6 @@
 import { ComingSoon } from '@/components/ui/ComingSoon';
 import { NAV_ITEMS } from '@/app/navigation';
 
-
-export function ComposePage() {
-  const n = NAV_ITEMS.compose;
-  return (
-    <ComingSoon
-      icon={n.icon}
-      title={n.label}
-      description="コード進行に合わせて、メロディーとベースラインを作ります。"
-      phase="Phase 7"
-      features={['ピアノロールで音符を入力', 'スケールの音・コードトーンを色分け表示', 'メロディー・ベース・ドラムをMIDIで出力']}
-    />
-  );
-}
-
 export function GenresPage() {
   const n = NAV_ITEMS.genres;
   return (
@@ -28,5 +14,3 @@ export function GenresPage() {
     />
   );
 }
-
-

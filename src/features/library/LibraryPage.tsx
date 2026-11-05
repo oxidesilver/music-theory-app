@@ -73,6 +73,8 @@ export function LibraryPage() {
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       キー：{keyName(s.key, 'unicode')}　BPM：{s.bpm}　コード {s.chords.length} 個
                       {s.melody.length > 0 && `　メロディー ${s.melody.length} 音`}
+                      {s.bass.length > 0 && `　ベース ${s.bass.length} 音`}
+                      {s.drums.length > 0 && '　ドラムあり'}
                       　更新：{new Date(s.updatedAt).toLocaleString('ja-JP')}
                     </p>
                     <p className="mt-1 truncate text-sm">
@@ -85,6 +87,9 @@ export function LibraryPage() {
                   <div className="flex flex-wrap gap-1.5">
                     <button type="button" onClick={() => navigate(`/progression/${s.id}`)} className="min-h-10 rounded-lg bg-brand-600 px-3 text-sm font-semibold text-white hover:bg-brand-700">
                       開く
+                    </button>
+                    <button type="button" onClick={() => navigate(`/compose/${s.id}`)} className="min-h-10 rounded-lg border border-brand-500 px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10">
+                      作曲画面で開く
                     </button>
                     <button type="button" onClick={() => void rename(s)} className="min-h-10 rounded-lg px-3 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
                       名前を変更

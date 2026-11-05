@@ -5,7 +5,7 @@
 // そのため、再生の命令は必ずボタンのクリックなどから呼び出す（内部で unlock() を行う）。
 
 import type * as ToneNS from 'tone';
-import { createInstrument, type InstrumentId } from './instruments';
+import { createDrumKit, createInstrument, type DrumKit, type InstrumentId } from './instruments';
 import { beatsToSeconds, midiToFrequency, volumeToDb } from './frequency';
 
 export interface PlayOptions {
@@ -23,6 +23,7 @@ interface TimedNote {
   duration: number;
   instrument?: InstrumentId;
   velocity?: number;
+  drum?: number;
 }
 
 export interface SequenceEvent {
@@ -33,6 +34,8 @@ export interface SequenceEvent {
   durationBeats: number;
   instrument?: InstrumentId;
   velocity?: number;
+  /** ドラムの音（GM ドラム番号）。指定したときは midis は使わない */
+  drum?: number;
 }
 
 class AudioEngine {
@@ -40,6 +43,7 @@ class AudioEngine {
   private loading: Promise<typeof ToneNS> | null = null;
   private master: ToneNS.Volume | null = null;
   private instruments = new Map<InstrumentId, ToneNS.PolySynth>();
+  private drumKit: DrumKit | null = null;
   private volume = 0.8;
   private defaultInstrument: InstrumentId = 'piano';
   private listeners = new Set<() => void>();
@@ -105,6 +109,13 @@ class AudioEngine {
     this.endTimer = window.setTimeout(() => this.emit(), (this.playingUntil - Tone.now()) * 1000 + 100);
   }
 
+  /** ドラムの音を1回鳴らす（ドラム入力のときの試し聴き用） */
+  async playDrum(drum: number, velocity = 0.9): Promise<void> {
+    const Tone = await this.unlock();
+    this.drumKit ??= createDrumKit(Tone, this.master!);
+    this.drumKit.trigger(drum, Tone.now() + 0.01, velocity);
+  }
+
   /** コードを和音で鳴らす（前に鳴っていた音は止める） */
   async chord(midis: number[], opts: PlayOptions = {}): Promise<void> {
     if (midis.length === 0) return;
@@ -146,6 +157,7 @@ class AudioEngine {
       duration: beatsToSeconds(e.durationBeats, bpm) * 0.95,
       instrument: e.instrument,
       velocity: e.velocity,
+      drum: e.drum,
     }));
     const length = opts.lengthBeats !== undefined ? beatsToSeconds(opts.lengthBeats, bpm) : undefined;
     await this.schedule(notes, opts.loop && length ? length : undefined);
@@ -158,10 +170,19 @@ class AudioEngine {
     this.stop(false);
     const transport = Tone.getTransport();
     for (const n of notes) {
+      if (n.drum !== undefined) {
+        this.drumKit ??= createDrumKit(Tone, this.master!);
+        const kit = this.drumKit;
+        const drum = n.drum;
+        transport.schedule((time) => kit.trigger(drum, time, n.velocity ?? 0.8), n.at);
+        continue;
+      }
+      if (n.midis.length === 0) continue;
       const inst = this.instrument(n.instrument);
       const freqs = n.midis.map((m) => midiToFrequency(m));
       transport.schedule((time) => inst.triggerAttackRelease(freqs, n.duration, time, n.velocity ?? 0.8), n.at);
     }
+    if (notes.length === 0) return;
     if (loopSeconds) {
       transport.loop = true;
       transport.loopStart = 0;

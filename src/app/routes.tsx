@@ -11,7 +11,8 @@ import { ProgressPage } from '@/features/progress/ProgressPage';
 import { ProgressionPage } from '@/features/progression/ProgressionPage';
 import { LibraryPage } from '@/features/library/LibraryPage';
 import { EarTrainingPage } from '@/features/ear/EarTrainingPage';
-import { ComposePage, GenresPage } from '@/features/placeholders';
+import { ComposePage } from '@/features/compose/ComposePage';
+import { GenresPage } from '@/features/placeholders';
 
 export const routes: RouteObject[] = [
   {
@@ -25,7 +26,8 @@ export const routes: RouteObject[] = [
       { path: 'progression/:songId', element: <ProgressionPage /> },
       { path: 'chords/:root?/:quality?', element: <ChordDictionaryPage /> },
       { path: 'ear', element: <EarTrainingPage /> },
-      { path: 'compose/*', element: <ComposePage /> },
+      { path: 'compose', element: <ComposePage /> },
+      { path: 'compose/:songId', element: <ComposePage /> },
       { path: 'genres/*', element: <GenresPage /> },
       { path: 'library', element: <LibraryPage /> },
       { path: 'progress', element: <ProgressPage /> },

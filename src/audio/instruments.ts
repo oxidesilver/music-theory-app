@@ -10,6 +10,49 @@ export const INSTRUMENT_INFO: Record<InstrumentId, { nameJa: string; description
   bass: { nameJa: 'ベース', description: '低音向けの、太く短い音' },
 };
 
+/** ドラムの音（GM ドラムの番号：36 キック、38 スネア、39 クラップ、42 ハイハット閉、46 ハイハット開） */
+export interface DrumKit {
+  trigger: (drum: number, time: number, velocity: number) => void;
+}
+
+export function createDrumKit(Tone: typeof ToneNS, destination: ToneNS.InputNode): DrumKit {
+  const out = new Tone.Volume(-4).connect(destination);
+  const kick = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 6, envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.1 } }).connect(out);
+  const snareFilter = new Tone.Filter({ frequency: 1800, type: 'bandpass', Q: 0.8 }).connect(out);
+  const snare = new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.18, sustain: 0 } }).connect(snareFilter);
+  const snareBody = new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 2, envelope: { attack: 0.001, decay: 0.12, sustain: 0 } }).connect(out);
+  snareBody.volume.value = -10;
+  const clapFilter = new Tone.Filter({ frequency: 1200, type: 'bandpass', Q: 1.2 }).connect(out);
+  const clap = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.005, decay: 0.15, sustain: 0 } }).connect(clapFilter);
+  const hatFilter = new Tone.Filter({ frequency: 8000, type: 'highpass' }).connect(out);
+  const hat = new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.05, sustain: 0 } }).connect(hatFilter);
+  const openHat = new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.3, sustain: 0 } }).connect(hatFilter);
+  hat.volume.value = -12;
+  openHat.volume.value = -14;
+
+  return {
+    trigger(drum, time, velocity) {
+      switch (drum) {
+        case 36:
+          kick.triggerAttackRelease('C1', 0.3, time, velocity);
+          break;
+        case 38:
+          snare.triggerAttackRelease(0.15, time, velocity);
+          snareBody.triggerAttackRelease('G2', 0.1, time, velocity);
+          break;
+        case 39:
+          clap.triggerAttackRelease(0.12, time, velocity);
+          break;
+        case 46:
+          openHat.triggerAttackRelease(0.25, time, velocity);
+          break;
+        default:
+          hat.triggerAttackRelease(0.04, time, velocity);
+      }
+    },
+  };
+}
+
 /** 音色を作る。出力は destination（音量つまみ）につなぐ */
 export function createInstrument(Tone: typeof ToneNS, id: InstrumentId, destination: ToneNS.InputNode): ToneNS.PolySynth {
   switch (id) {

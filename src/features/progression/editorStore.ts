@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { db } from '@/storage/db';
-import { PPQ, SONG_SCHEMA_VERSION, type ChordEvent, type Song } from '@/storage/types';
+import { PPQ, SONG_SCHEMA_VERSION, type ChordEvent, type DrumEvent, type NoteEvent, type Song } from '@/storage/types';
 import { createId } from '@/lib/id';
-import { makeKey, type MusicalKey } from '@/theory/key';
+import { makeKey, spellInKey, type MusicalKey } from '@/theory/key';
+import { midiOf, semitoneOf } from '@/theory/pitch';
 import type { ChordQualityId, ChordSpec } from '@/theory/chord';
 import { makeChord, transposeChords, type ProgressionChord } from './logic';
 
@@ -14,10 +15,17 @@ export interface EditorState {
   key: MusicalKey;
   bpm: number;
   chords: ProgressionChord[];
+  /** メロディー・ベース・ドラム（作曲画面で編集する） */
+  melody: NoteEvent[];
+  bass: NoteEvent[];
+  drums: DrumEvent[];
   selected: number | null;
   dirty: boolean;
-  /** 読み込んだ作品が持っているメロディーなど（コード進行メーカーでは編集しないが、保存時に消さない） */
+  /** 読み込んだ作品（作成日時などを保存時に引き継ぐ） */
   base: Song | null;
+
+  setTrack: (track: 'melody' | 'bass', notes: NoteEvent[]) => void;
+  setDrums: (events: DrumEvent[]) => void;
 
   setTitle: (t: string) => void;
   setKey: (k: MusicalKey, transpose: boolean) => void;
@@ -46,10 +54,20 @@ const initial = () => ({
   key: makeKey('C', 'major'),
   bpm: 100,
   chords: [] as ProgressionChord[],
+  melody: [] as NoteEvent[],
+  bass: [] as NoteEvent[],
+  drums: [] as DrumEvent[],
   selected: null,
   dirty: false,
   base: null,
 });
+
+/** キーの変更に合わせて、音符を最も近い方向に移調する */
+function transposeNotes(notes: NoteEvent[], from: MusicalKey, to: MusicalKey): NoteEvent[] {
+  let diff = (((semitoneOf(to.tonic) - semitoneOf(from.tonic)) % 12) + 12) % 12;
+  if (diff > 6) diff -= 12;
+  return notes.map((n) => ({ ...n, pitch: spellInKey(midiOf(n.pitch) + diff, to) }));
+}
 
 /** 進行 → 保存用のデータ（tick 単位） */
 export function chordsToEvents(chords: ProgressionChord[]): ChordEvent[] {
@@ -87,7 +105,15 @@ export const useEditor = create<EditorState>()((set, get) => ({
 
   setTitle: (title) => set({ title, dirty: true }),
   setKey: (key, transpose) =>
-    set((s) => ({ key, chords: transpose ? transposeChords(s.chords, s.key, key) : s.chords, dirty: true })),
+    set((s) => ({
+      key,
+      chords: transpose ? transposeChords(s.chords, s.key, key) : s.chords,
+      melody: transpose ? transposeNotes(s.melody, s.key, key) : s.melody,
+      bass: transpose ? transposeNotes(s.bass, s.key, key) : s.bass,
+      dirty: true,
+    })),
+  setTrack: (track, notes) => set({ [track]: [...notes].sort((a, b) => a.startTick - b.startTick), dirty: true } as Partial<EditorState>),
+  setDrums: (drums) => set({ drums, dirty: true }),
   setBpm: (bpm) => set({ bpm: Math.round(Math.min(MAX_BPM, Math.max(MIN_BPM, bpm))), dirty: true }),
   select: (selected) => set({ selected }),
   add: (spec, durationBeats = 4) =>
@@ -132,6 +158,9 @@ export const useEditor = create<EditorState>()((set, get) => ({
       key: song.key,
       bpm: song.bpm,
       chords: eventsToChords(song.chords),
+      melody: song.melody,
+      bass: song.bass,
+      drums: song.drums ?? [],
       selected: null,
       dirty: false,
       base: song,
@@ -150,9 +179,9 @@ export const useEditor = create<EditorState>()((set, get) => ({
       bpm: s.bpm,
       timeSignature: [4, 4],
       chords: chordsToEvents(s.chords),
-      melody: s.base?.melody ?? [],
-      bass: s.base?.bass ?? [],
-      drums: s.base?.drums ?? [],
+      melody: s.melody,
+      bass: s.bass,
+      drums: s.drums,
       instruments: s.base?.instruments ?? { chord: 'piano', melody: 'synth', bass: 'bass' },
       createdAt: s.base?.createdAt ?? now,
       updatedAt: now,

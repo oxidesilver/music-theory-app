@@ -152,6 +152,12 @@ export function ProgressionPage() {
           <button type="button" onClick={() => void save()} className="min-h-11 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700">
             💾 保存
           </button>
+          <Link
+            to={ed.songId ? `/compose/${ed.songId}` : '/compose'}
+            className="flex min-h-11 items-center rounded-xl border border-brand-500 px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
+          >
+            🎵 メロディーを作る
+          </Link>
           <button
             type="button"
             onClick={() => {
