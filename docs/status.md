@@ -23,11 +23,12 @@
 教材：第1〜9章すべて完成（全67レッスン）。教材に書いた音楽理論の事実は src/content/lessons/content.test.ts で理論エンジンと照合している。
 （main ブランチに Push すると、GitHub Actions がテスト → ビルド → 公開を自動で行う）
 
-自動テスト：801件すべて合格（`npm test`）。五線譜の表示（src/components/Staff）と 3/4・6/8 拍子（src/theory/meter.ts）にも対応済み。
+自動テスト：804件すべて合格（`npm test`）。五線譜の表示（src/components/Staff）と 3/4・6/8 拍子（src/theory/meter.ts）にも対応済み。
+ピアノの音色は録音音源（Salamander Grand Piano、CC BY 3.0、public/samples/piano/ の mp3 30個・約1.9MB）。読み込み中や失敗時は従来の合成音で鳴る。オフライン用にも端末へ保存される。
 
 ## 今後の候補（未着手）
 
-- 高品質なサンプル音源への差し替え
+- 特になし（要望があれば追加）
 
 ## ユーザーに確認・お願いが必要なこと
 

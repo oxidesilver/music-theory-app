@@ -20,8 +20,7 @@ PowerShell で、このフォルダ（`D:\music app`）を開いた状態で実�
 
 ## 技術
 
-React / TypeScript / Vite / Tailwind CSS / React Router / Zustand / Dexie（IndexedDB）/ vite-plugin-pwa / Tone.js / Vitest。
-（Phase 8 で @tonejs/midi を追加予定）
+React / TypeScript / Vite / Tailwind CSS / React Router / Zustand / Dexie（IndexedDB）/ Zod / vite-plugin-pwa / Tone.js / @tonejs/midi / Vitest。
 
 ## フォルダの中身（主なもの）
 
@@ -30,3 +29,8 @@ React / TypeScript / Vite / Tailwind CSS / React Router / Zustand / Dexie（Inde
 - `src/components/PianoKeyboard/` … 全画面で使うピアノ鍵盤
 - `src/content/` … 解説文などの教材データ
 - `src/features/` … 各画面
+
+## 使用している音源
+
+- **Salamander Grand Piano**（作者：Alexander Holm）… ピアノの音色。ライセンス：[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)。
+  Tone.js が配布している MP3 版（https://github.com/Tonejs/audio の salamander フォルダ）を `public/samples/piano/` に収録しています。詳しくは `public/samples/piano/LICENSE.txt` を参照。

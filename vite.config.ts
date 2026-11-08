@@ -34,7 +34,8 @@ export default defineConfig({
       },
       workbox: {
         // アプリ本体のファイルをすべて端末に保存し、オフラインでも起動できるようにする
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // ピアノの録音（mp3）も含めて端末に保存し、オフラインでも本物のピアノの音で鳴らす
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,mp3}'],
       },
     }),
   ],

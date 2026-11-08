@@ -5,7 +5,7 @@
 // そのため、再生の命令は必ずボタンのクリックなどから呼び出す（内部で unlock() を行う）。
 
 import type * as ToneNS from 'tone';
-import { createDrumKit, createInstrument, type DrumKit, type InstrumentId } from './instruments';
+import { createDrumKit, createInstrument, type DrumKit, type Instrument, type InstrumentId } from './instruments';
 import { beatsToSeconds, midiToFrequency, volumeToDb } from './frequency';
 
 export interface PlayOptions {
@@ -42,7 +42,7 @@ class AudioEngine {
   private tone: typeof ToneNS | null = null;
   private loading: Promise<typeof ToneNS> | null = null;
   private master: ToneNS.Volume | null = null;
-  private instruments = new Map<InstrumentId, ToneNS.PolySynth>();
+  private instruments = new Map<InstrumentId, Instrument>();
   private drumKit: DrumKit | null = null;
   private volume = 0.8;
   private defaultInstrument: InstrumentId = 'piano';
@@ -65,6 +65,8 @@ class AudioEngine {
   async unlock(): Promise<typeof ToneNS> {
     const Tone = await this.load();
     if (Tone.getContext().state !== 'running') await Tone.start();
+    // ピアノの録音（約2MB）は、最初に音を出したときから裏で読み込み始める
+    if (!this.instruments.has('piano')) this.instrument('piano');
     return Tone;
   }
 
@@ -77,7 +79,7 @@ class AudioEngine {
     this.defaultInstrument = id;
   }
 
-  private instrument(id: InstrumentId | undefined): ToneNS.PolySynth {
+  private instrument(id: InstrumentId | undefined): Instrument {
     const key = id ?? this.defaultInstrument;
     let inst = this.instruments.get(key);
     if (!inst) {

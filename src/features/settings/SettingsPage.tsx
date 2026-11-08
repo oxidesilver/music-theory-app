@@ -7,6 +7,7 @@ import { db } from '@/storage/db';
 import { isStoragePersisted } from '@/storage/persist';
 import { audio } from '@/audio/engine';
 import { BackupSection } from './BackupSection';
+import { SAMPLE_CREDITS } from '@/audio/instruments';
 
 interface Option<T extends string> {
   value: T;
@@ -197,6 +198,23 @@ export function SettingsPage() {
         </Card>
 
         <BackupSection onRestored={() => setRefresh((r) => r + 1)} />
+
+        <Card className="space-y-2">
+          <h2 className="font-bold">使用している音源</h2>
+          <ul className="space-y-2 text-sm">
+            {SAMPLE_CREDITS.map((c) => (
+              <li key={c.name}>
+                <span className="font-semibold">{c.name}</span>（作者：{c.author}）
+                <span className="block text-xs text-slate-500 dark:text-slate-400">
+                  {c.note}・ライセンス：
+                  <a href={c.licenseUrl} target="_blank" rel="noreferrer" className="underline">
+                    {c.license}
+                  </a>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
 
         <div className="text-right">
           <button

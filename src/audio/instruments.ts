@@ -1,11 +1,12 @@
-// 音色の定義。最初は Tone.js のシンセサイザーで作る（設計書 4-4）。
-// 将来、高品質なサンプル音源に差し替えるときは、このファイルだけを変更すればよい。
+// 音色の定義（設計書 4-4）。
+// - ピアノ：本物のピアノの録音（Salamander Grand Piano・CC-BY 3.0）。読み込みが終わるまではシンセのピアノ風の音で鳴らす
+// - シンセ・ベース：Tone.js のシンセサイザー
 import type * as ToneNS from 'tone';
 
 export type InstrumentId = 'piano' | 'synth' | 'bass';
 
 export const INSTRUMENT_INFO: Record<InstrumentId, { nameJa: string; description: string }> = {
-  piano: { nameJa: 'ピアノ', description: '鍵盤楽器のような、はっきりした減衰音' },
+  piano: { nameJa: 'ピアノ', description: '本物のグランドピアノの録音（Salamander Grand Piano）' },
   synth: { nameJa: 'シンセ', description: 'のこぎり波の、明るく伸びのある音' },
   bass: { nameJa: 'ベース', description: '低音向けの、太く短い音' },
 };
@@ -53,22 +54,88 @@ export function createDrumKit(Tone: typeof ToneNS, destination: ToneNS.InputNode
   };
 }
 
+/** 鳴らせる音色（シンセもサンプル音源も同じ使い方にそろえる） */
+export interface Instrument {
+  triggerAttackRelease: (frequencies: number[], duration: number, time: number, velocity: number) => void;
+  releaseAll: () => void;
+}
+
+/** ピアノ音源のファイル（短3度おきに録音された A・C・D♯・F♯）。足りない高さは近い録音の高さを変えて鳴らす */
+export function pianoSampleUrls(): Record<string, string> {
+  const urls: Record<string, string> = { A0: 'A0.mp3', C8: 'C8.mp3' };
+  for (let octave = 1; octave <= 7; octave++) {
+    urls[`A${octave}`] = `A${octave}.mp3`;
+    urls[`C${octave}`] = `C${octave}.mp3`;
+    urls[`D#${octave}`] = `Ds${octave}.mp3`;
+    urls[`F#${octave}`] = `Fs${octave}.mp3`;
+  }
+  return urls;
+}
+
+/** 使用している音源のクレジット（ライセンスの条件として表示する） */
+export const SAMPLE_CREDITS = [
+  {
+    name: 'Salamander Grand Piano',
+    author: 'Alexander Holm',
+    license: 'CC BY 3.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by/3.0/',
+    note: 'ピアノの音色に使用（Tone.js の配布する MP3 版）',
+  },
+];
+
+/** ピアノ：サンプル音源を読み込み、読み込み中・失敗時はシンセのピアノ風の音で鳴らす */
+function createPiano(Tone: typeof ToneNS, destination: ToneNS.InputNode): Instrument {
+  const fallback = createSynthPiano(Tone, destination);
+  let sampler: ToneNS.Sampler | null = null;
+  let ready = false;
+  try {
+    sampler = new Tone.Sampler({
+      urls: pianoSampleUrls(),
+      baseUrl: `${import.meta.env.BASE_URL}samples/piano/`,
+      release: 1.2,
+      onload: () => {
+        ready = true;
+      },
+      onerror: () => {
+        ready = false;
+      },
+    }).connect(destination);
+    sampler.volume.value = -4;
+  } catch {
+    sampler = null;
+  }
+  return {
+    triggerAttackRelease(frequencies, duration, time, velocity) {
+      if (ready && sampler) sampler.triggerAttackRelease(frequencies, duration, time, velocity);
+      else fallback.triggerAttackRelease(frequencies, duration, time, velocity);
+    },
+    releaseAll() {
+      fallback.releaseAll();
+      if (ready && sampler) sampler.releaseAll();
+    },
+  };
+}
+
+/** シンセで作ったピアノ風の音（サンプル音源の読み込み中・読み込めなかったときに使う） */
+function createSynthPiano(Tone: typeof ToneNS, destination: ToneNS.InputNode): ToneNS.PolySynth {
+  const synth = new Tone.PolySynth(Tone.FMSynth, {
+    harmonicity: 2,
+    modulationIndex: 1.5,
+    oscillator: { type: 'sine' },
+    modulation: { type: 'triangle' },
+    envelope: { attack: 0.005, decay: 1.2, sustain: 0.15, release: 1.2 },
+    modulationEnvelope: { attack: 0.005, decay: 0.4, sustain: 0.1, release: 0.8 },
+  });
+  synth.maxPolyphony = 32;
+  synth.volume.value = -8;
+  return synth.connect(destination);
+}
+
 /** 音色を作る。出力は destination（音量つまみ）につなぐ */
-export function createInstrument(Tone: typeof ToneNS, id: InstrumentId, destination: ToneNS.InputNode): ToneNS.PolySynth {
+export function createInstrument(Tone: typeof ToneNS, id: InstrumentId, destination: ToneNS.InputNode): Instrument {
   switch (id) {
-    case 'piano': {
-      const synth = new Tone.PolySynth(Tone.FMSynth, {
-        harmonicity: 2,
-        modulationIndex: 1.5,
-        oscillator: { type: 'sine' },
-        modulation: { type: 'triangle' },
-        envelope: { attack: 0.005, decay: 1.2, sustain: 0.15, release: 1.2 },
-        modulationEnvelope: { attack: 0.005, decay: 0.4, sustain: 0.1, release: 0.8 },
-      });
-      synth.maxPolyphony = 32;
-      synth.volume.value = -8;
-      return synth.connect(destination);
-    }
+    case 'piano':
+      return createPiano(Tone, destination);
     case 'synth': {
       const synth = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'fatsawtooth', count: 3, spread: 20 },
