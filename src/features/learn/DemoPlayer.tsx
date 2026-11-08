@@ -2,12 +2,24 @@ import { PianoKeyboard, type KeyMark } from '@/components/PianoKeyboard/PianoKey
 import { audio } from '@/audio/engine';
 import { useSettings } from '@/stores/settingsStore';
 import { formatPitch, formatPitchClass, midiOf, pitchFromMidi, type Pitch } from '@/theory/pitch';
-import { resolveNotes } from '@/content/lessons/resolve';
+import { formatChordSymbol, parseChordSymbol } from '@/theory/chord';
+import { resolveNotes, resolveProgression } from '@/content/lessons/resolve';
 import type { Demo } from '@/content/lessons/types';
 import { RichText } from './RichText';
 
+/** コード進行を鳴らす速さ（BPM）と、1つのコードの長さ（拍） */
+const PROGRESSION_BPM = 96;
+const BEATS_PER_CHORD = 2;
+
 /** 音を鳴らす（教材の指定どおりの鳴らし方で） */
 export function playDemo(demo: Demo, notes: Pitch[] = resolveNotes(demo.source)) {
+  if (demo.mode === 'progression') {
+    const chords = resolveProgression(demo.source);
+    return audio.playSequence(
+      chords.map((c, i) => ({ midis: c.map(midiOf), startBeat: i * BEATS_PER_CHORD, durationBeats: BEATS_PER_CHORD })),
+      PROGRESSION_BPM,
+    );
+  }
   const midis = notes.map(midiOf);
   if (demo.mode === 'chord') return audio.chord(midis);
   if (demo.mode === 'compare') return audio.compare(midis[0]!, midis[1]!);
@@ -24,8 +36,16 @@ export function keyboardRange(midis: number[]): [number, number] {
   return [low, high];
 }
 
+const BUTTON_LABEL: Record<Demo['mode'], string> = {
+  chord: '▶ 同時に鳴らす',
+  compare: '▶ 2つの音を聴き比べる',
+  sequence: '▶ 順番に鳴らす',
+  progression: '▶ 進行を鳴らす',
+};
+
 export function DemoPlayer({ demo }: { demo: Demo }) {
   const octaveConvention = useSettings((s) => s.octaveConvention);
+  const chordStyle = useSettings((s) => s.romanStyle);
   const notes = resolveNotes(demo.source);
   const midis = notes.map(midiOf);
   const [from, to] = keyboardRange(midis);
@@ -34,7 +54,8 @@ export function DemoPlayer({ demo }: { demo: Demo }) {
     marks[midis[i]!] = { kind: i === 0 ? 'root' : 'chord', label: formatPitchClass(p, 'unicode') };
   });
   const fmt = (m: number) => formatPitch(pitchFromMidi(m), { octaveConvention, style: 'unicode' });
-  const buttonLabel = demo.mode === 'chord' ? '▶ 同時に鳴らす' : demo.mode === 'compare' ? '▶ 2つの音を聴き比べる' : '▶ 順番に鳴らす';
+  const isProgression = demo.mode === 'progression' && 'progression' in demo.source;
+  const showKeyboard = demo.keyboard ?? !isProgression;
 
   return (
     <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
@@ -52,13 +73,21 @@ export function DemoPlayer({ demo }: { demo: Demo }) {
           onClick={() => void playDemo(demo, notes)}
           className="min-h-11 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
         >
-          {buttonLabel}
+          {BUTTON_LABEL[demo.mode]}
         </button>
       </div>
-      <p className="mt-2 text-sm">
-        {notes.map((p) => formatPitch(p, { octaveConvention, style: 'unicode' })).join(' → ')}
-      </p>
-      {demo.keyboard !== false && (
+      {isProgression && 'progression' in demo.source ? (
+        <p className="mt-2 flex flex-wrap gap-1.5 text-sm">
+          {demo.source.progression.map((s, i) => (
+            <span key={i} className="rounded-lg bg-slate-100 px-2 py-1 font-semibold dark:bg-slate-800">
+              {formatChordSymbol(parseChordSymbol(s), { style: chordStyle, accidentals: 'unicode' })}
+            </span>
+          ))}
+        </p>
+      ) : (
+        <p className="mt-2 text-sm">{notes.map((p) => formatPitch(p, { octaveConvention, style: 'unicode' })).join(demo.mode === 'chord' ? '・' : ' → ')}</p>
+      )}
+      {showKeyboard && (
         <div className="mt-3">
           <PianoKeyboard from={from} to={to} marks={marks} cLabel={fmt} keyName={fmt} ariaLabel={`${demo.title}の鍵盤`} />
         </div>

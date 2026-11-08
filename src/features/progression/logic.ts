@@ -35,10 +35,10 @@ function placeInRange(pc: PitchClass, low: number, high: number): Pitch {
   return { ...pc, octave: 4 };
 }
 
-/** コードの音（中音域。ルートが F3〜E4 に入るように置く） */
+/** コードの音（中音域。ルートが F3〜E4 に入るように置く。分数コードはベース音を一番下に加える） */
 export function chordVoicing(chord: ChordSpec): Pitch[] {
   const root = placeInRange(chord.root, 53, 64);
-  return chordPitches(root, chord.quality, { voicing: 'common' });
+  return chordPitches(root, chord.quality, { voicing: 'common', bass: chord.bass });
 }
 
 /** ベースの音（C2〜B2） */

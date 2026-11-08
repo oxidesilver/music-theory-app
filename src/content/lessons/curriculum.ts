@@ -3,6 +3,9 @@ import type { Chapter, Lesson } from './types';
 import { CH1_LESSONS } from './ch1';
 import { CH2_LESSONS } from './ch2';
 import { CH3_LESSONS } from './ch3';
+import { CH4_LESSONS } from './ch4';
+import { CH5_LESSONS } from './ch5';
+import { CH6_LESSONS } from './ch6';
 
 export const CHAPTERS: Chapter[] = [
   {
@@ -34,24 +37,24 @@ export const CHAPTERS: Chapter[] = [
     number: 4,
     title: 'キー',
     description: '曲の「主役の音」と調号',
-    plannedTopics: ['キーとは何か', 'メジャーキー', 'マイナーキー', '調号', '平行調', '同主調', '曲のキーの調べ方'],
-    lessons: [],
+    plannedTopics: [],
+    lessons: CH4_LESSONS,
   },
   {
     id: 'ch5',
     number: 5,
     title: 'コードの基礎',
     description: '和音の仕組みと種類',
-    plannedTopics: ['コードとは何か', 'トライアド', 'メジャーコード', 'マイナーコード', 'ディミニッシュ', 'オーギュメント', 'sus2・sus4', '転回形'],
-    lessons: [],
+    plannedTopics: [],
+    lessons: CH5_LESSONS,
   },
   {
     id: 'ch6',
     number: 6,
     title: 'ダイアトニックコード',
     description: 'キーの中で使えるコードと、その役割',
-    plannedTopics: ['ダイアトニックコードとは', 'メジャーキーのダイアトニックコード', 'マイナーキーのダイアトニックコード', 'ローマ数字による表記', 'トニック・サブドミナント・ドミナント', '各コードの役割'],
-    lessons: [],
+    plannedTopics: [],
+    lessons: CH6_LESSONS,
   },
   {
     id: 'ch7',

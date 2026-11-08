@@ -39,11 +39,11 @@ describe('学習機能', () => {
     vi.clearAllMocks();
   });
 
-  it('レッスン一覧に第1〜9章が並び、第4章以降は「準備中」', async () => {
+  it('レッスン一覧に第1〜9章が並び、第7章以降は「準備中」', async () => {
     renderAt('/learn');
     expect(await screen.findByText(/第1章.*音楽の基礎/)).toBeInTheDocument();
     expect(screen.getByText(/第9章.*実践的な作曲理論/)).toBeInTheDocument();
-    expect(screen.getAllByText('準備中')).toHaveLength(6);
+    expect(screen.getAllByText('準備中')).toHaveLength(3);
   });
 
   it('レッスン画面に7つの構成（説明・図解・鍵盤と音・使用例・DTM・クイズ）が表示される', async () => {
@@ -83,7 +83,7 @@ describe('学習機能', () => {
     await db.lessonProgress.put({ lessonId: 'ch1-l1', status: 'completed', updatedAt: now, completedAt: now });
     renderAt('/learn');
     expect(await screen.findByRole('link', { name: /続きから学ぶ：ピアノ鍵盤の仕組み/ })).toHaveAttribute('href', '/learn/ch1-l2');
-    expect(screen.getByText('1 / 18 レッスン完了')).toBeInTheDocument();
+    expect(screen.getByText('1 / 39 レッスン完了')).toBeInTheDocument();
   });
 
   it('文章中の音名は設定に合わせて表示される（中央のド：FL Studio 式 C5 ／ 一般的な表記 C4）', async () => {
@@ -102,5 +102,37 @@ describe('学習機能', () => {
     const weakCard = (await screen.findByRole('heading', { name: '苦手な問題' })).parentElement!;
     expect(await within(weakCard).findByText('E と F の間の距離は？')).toBeInTheDocument();
     expect(within(weakCard).getByText(/正解 0\/1/)).toBeInTheDocument();
+  });
+
+  it('第4章：調号の一覧に、キーと ♯・♭ の数と平行調が表示される', async () => {
+    renderAt('/learn/ch4-l4');
+    const row = (await screen.findAllByText('Dメジャー'))[0]!.closest('tr')!;
+    expect(row).toHaveTextContent('♯ 2個');
+    expect(row).toHaveTextContent('F♯ C♯');
+    expect(row).toHaveTextContent('Bマイナー');
+  });
+
+  it('第5章：コードの組み立ての図で種類を切り替えると、構成音と鳴らす音が変わる', async () => {
+    renderAt('/learn/ch5-l2');
+    await screen.findByTestId('builder-symbol');
+    await userEvent.click(screen.getByRole('button', { name: 'ディミニッシュ' }));
+    expect(screen.getByTestId('builder-symbol')).toHaveTextContent('Cdim');
+    await userEvent.click(screen.getByRole('button', { name: '▶ 和音で鳴らす' }));
+    expect(audio.chord).toHaveBeenCalledWith([60, 63, 66]);
+  });
+
+  it('第6章：ダイアトニック表でキーを切り替えると、コードが変わる（キー D）', async () => {
+    renderAt('/learn/ch6-l2');
+    const keys = await screen.findByLabelText('キー');
+    await userEvent.click(within(keys).getByRole('button', { name: 'D' }));
+    for (const c of ['D', 'Em', 'F♯m', 'G', 'A', 'Bm', 'C♯dim']) expect(screen.getByRole('button', { name: `${c.replace('♯', '#')} を鳴らす` })).toBeInTheDocument();
+  });
+
+  it('コード進行のデモは、コードを順番に鳴らす', async () => {
+    renderAt('/learn/ch6-l5');
+    await userEvent.click((await screen.findAllByRole('button', { name: '▶ 進行を鳴らす' }))[0]!);
+    const [events] = vi.mocked(audio.playSequence).mock.calls[0]!;
+    expect(events).toHaveLength(4);
+    expect(events[0]!.midis).toEqual([60, 64, 67]);
   });
 });

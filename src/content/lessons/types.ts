@@ -6,6 +6,7 @@
 //   {{C4}}   … 音名。設定（FL Studio式／一般的な表記）に合わせて「C5」「C4」と表示される
 
 import type { ScaleId } from '@/theory/scale';
+import type { ChordQualityId } from '@/theory/chord';
 
 /** 鳴らす音の指定 */
 export type NoteSource =
@@ -14,14 +15,18 @@ export type NoteSource =
   /** スケール（主音から上へ。withOctave = true なら最後に1オクターブ上の主音を足す） */
   | { scale: ScaleId; tonic: string; withOctave?: boolean; descending?: boolean }
   /** 音程（from の音と、そこから interval 上の音） */
-  | { interval: string; from: string };
+  | { interval: string; from: string }
+  /** コード（例：'Am7'）。ルートを octave（初期値 4）に置き、inversion で転回形 */
+  | { chord: string; octave?: number; inversion?: number }
+  /** コード進行（例：['C', 'G', 'Am', 'F']）。mode: 'progression' で1つずつ順番に鳴らす */
+  | { progression: string[] };
 
 export interface Demo {
   title: string;
   description?: string;
   source: NoteSource;
-  /** sequence = 1音ずつ、chord = 同時に、compare = 2音を順番に鳴らしてから同時に */
-  mode: 'sequence' | 'chord' | 'compare';
+  /** sequence = 1音ずつ、chord = 同時に、compare = 2音を順番に鳴らしてから同時に、progression = コード進行 */
+  mode: 'sequence' | 'chord' | 'compare' | 'progression';
   /** 鍵盤を表示するか（初期値 true） */
   keyboard?: boolean;
 }
@@ -36,7 +41,13 @@ export type Diagram =
   /** 音程の一覧表（from の音から） */
   | { kind: 'interval-table'; from: string; intervals: string[] }
   /** スケールを自由に選んで比べる */
-  | { kind: 'scale-explorer'; scales: ScaleId[] };
+  | { kind: 'scale-explorer'; scales: ScaleId[] }
+  /** キーと調号の一覧 */
+  | { kind: 'key-signatures'; mode: 'major' | 'minor' }
+  /** ルートとコードの種類を選んで、構成音と音程を確かめる */
+  | { kind: 'chord-builder'; qualities: ChordQualityId[]; root?: string }
+  /** キーを選んで、ダイアトニックコードの一覧（ローマ数字・役割・音）を見る */
+  | { kind: 'diatonic-table'; mode: 'major' | 'minor'; tonic?: string; sevenths?: boolean; scale?: ScaleId };
 
 export interface Term {
   term: string;

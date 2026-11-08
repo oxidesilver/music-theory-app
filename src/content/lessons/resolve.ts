@@ -2,7 +2,15 @@
 import { parseInterval, transposePitch } from '@/theory/interval';
 import { midiOf, mod, parsePitch, semitoneOf, type Pitch } from '@/theory/pitch';
 import { scalePitches } from '@/theory/scale';
+import { chordPitches, parseChordSymbol } from '@/theory/chord';
+import { chordVoicing } from '@/features/progression/logic';
 import type { NoteSource } from './types';
+
+/** コード進行を、コードごとの音（中音域に置いた形）に変換する */
+export function resolveProgression(source: NoteSource): Pitch[][] {
+  if ('progression' in source) return source.progression.map((s) => chordVoicing(parseChordSymbol(s)));
+  return [resolveNotes(source)];
+}
 
 export function resolveNotes(source: NoteSource): Pitch[] {
   if ('notes' in source) return source.notes.map(parsePitch);
@@ -10,6 +18,11 @@ export function resolveNotes(source: NoteSource): Pitch[] {
     const from = parsePitch(source.from);
     return [from, transposePitch(from, parseInterval(source.interval))];
   }
+  if ('chord' in source) {
+    const c = parseChordSymbol(source.chord);
+    return chordPitches({ ...c.root, octave: source.octave ?? 4 }, c.quality, { inversion: source.inversion ?? 0, bass: c.bass });
+  }
+  if ('progression' in source) return resolveProgression(source)[0] ?? [];
   const tonic = parsePitch(source.tonic);
   let notes = scalePitches(tonic, source.scale);
   if (source.withOctave) notes = [...notes, { ...tonic, octave: tonic.octave + 1 }];

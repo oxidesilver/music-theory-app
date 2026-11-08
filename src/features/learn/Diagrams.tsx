@@ -19,6 +19,7 @@ import { SCALES, scalePitches, type ScaleId } from '@/theory/scale';
 import { resolveNotes, stepLabel } from '@/content/lessons/resolve';
 import type { Diagram } from '@/content/lessons/types';
 import { keyboardRange } from './DemoPlayer';
+import { ChordBuilder, DiatonicTable, KeySignatureTable } from './TheoryDiagrams';
 
 function useFmt() {
   const octaveConvention = useSettings((s) => s.octaveConvention);
@@ -218,5 +219,11 @@ export function DiagramView({ diagram }: { diagram: Diagram }) {
       return <IntervalTable diagram={diagram} />;
     case 'scale-explorer':
       return <ScaleExplorer diagram={diagram} />;
+    case 'key-signatures':
+      return <KeySignatureTable diagram={diagram} />;
+    case 'chord-builder':
+      return <ChordBuilder diagram={diagram} />;
+    case 'diatonic-table':
+      return <DiatonicTable diagram={diagram} />;
   }
 }
