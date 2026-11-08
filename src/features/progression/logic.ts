@@ -198,8 +198,9 @@ export const PRESET_PROGRESSIONS: PresetProgression[] = [
   { id: 'andalusian', name: 'アンダルシア進行', mode: 'minor', romans: ['Ⅰm', 'Ⅶ', 'Ⅵ', 'Ⅴ'], moods: ['暗い', '緊張感'], description: 'フラメンコに由来するといわれる、下がっていく情熱的な進行。' },
 ];
 
-export function realizePreset(key: MusicalKey, preset: PresetProgression): ProgressionChord[] {
-  return preset.romans.map((r) => makeChord(normalizeRoot(key, chordFromRoman(key, r)), 4));
+/** 定番進行を実際のコードにする（1つのコード = 1小節。durationBeats は拍子の1小節の拍数） */
+export function realizePreset(key: MusicalKey, preset: PresetProgression, durationBeats = 4): ProgressionChord[] {
+  return preset.romans.map((r) => makeChord(normalizeRoot(key, chordFromRoman(key, r)), durationBeats));
 }
 
 // ---- 雰囲気の傾向 ----

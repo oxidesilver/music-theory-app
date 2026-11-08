@@ -27,6 +27,7 @@ export function realizeSample(genre: Genre, sample: GenreSample, rhythm: RhythmE
     bass: bassLine(chords, key, rhythm.bass),
     drums: patternToEvents(patternFrom(rhythm.drums), length),
     chordRhythm: rhythm.chordRhythm,
+    timeSignature: [4, 4] as [number, number],
   };
 }
 

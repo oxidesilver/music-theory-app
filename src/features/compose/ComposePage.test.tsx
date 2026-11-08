@@ -120,7 +120,7 @@ describe('メロディー・作曲画面', () => {
     renderAt('/compose');
     clickRoll('メロディーのピアノロール', 84, 64);
     await userEvent.click(screen.getByRole('button', { name: /^🎸 ベース/ }));
-    await userEvent.click(screen.getByRole('button', { name: '4分音符でルート' }));
+    await userEvent.click(screen.getByRole('button', { name: '1拍ごとにルート' }));
     await userEvent.click(screen.getByRole('button', { name: '💾 保存' }));
     await waitFor(async () => expect(await db.songs.count()).toBe(1));
     const saved = (await db.songs.toArray())[0]!;
@@ -139,5 +139,17 @@ describe('メロディー・作曲画面', () => {
     useEditor.getState().setKey({ tonic: { letter: 'D', accidental: 0 }, mode: 'major' }, true);
     expect(formatPitch(useEditor.getState().melody[0]!.pitch)).toBe('F#4');
     expect(useEditor.getState().chords.map((c) => c.root.letter)).toEqual(['D', 'A']);
+  });
+
+
+  it('3/4 の作品では、ドラムが12マスになり、ワルツのパターンを選べる', async () => {
+    useEditor.getState().setTimeSignature([3, 4]);
+    renderAt('/compose');
+    expect(screen.getByText(/拍子：3\/4/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^🥁 ドラム/ }));
+    expect(screen.getAllByRole('button', { name: /^キック \d+$/ })).toHaveLength(12);
+    await userEvent.click(screen.getByRole('button', { name: 'ワルツ' }));
+    expect(screen.getByRole('button', { name: 'キック 1' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'ハイハット（閉） 5' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

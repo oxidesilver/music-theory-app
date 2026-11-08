@@ -20,12 +20,10 @@ import { totalBeats } from '@/features/progression/logic';
 import {
   BASS_PATTERNS,
   CHORD_RHYTHMS,
-  DRUM_PRESETS,
+  drumPresetsFor,
   DRUM_TICKS,
   ROLE_HELP,
   SNAP_OPTIONS,
-  STEPS_PER_BAR,
-  TICKS_PER_BAR,
   TICKS_PER_BEAT,
   TRACK_RANGE,
   addPassingNotes,
@@ -45,6 +43,7 @@ import {
 } from './logic';
 import { PianoRoll, RoleLegend } from './PianoRoll';
 import { DrumGrid } from './DrumGrid';
+import { barAndCount, barTicks, stepsPerBar, timeSignatureLabel } from '@/theory/meter';
 import { ExportMidiPanel } from '@/midi/ExportMidiPanel';
 import { sourceFromEditor } from '@/midi/source';
 
@@ -94,11 +93,14 @@ export function ComposePage() {
     if (!scaleOptions(ed.key.mode).includes(scaleId)) setScaleId(ed.key.mode === 'major' ? 'major' : 'naturalMinor');
   }, [ed.key.mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const lengthTicks = songLengthTicks(ed.chords, ed.melody, ed.bass);
+  const ts = ed.timeSignature;
+  const lengthTicks = songLengthTicks(ed.chords, [ed.melody, ed.bass], ts);
+  const steps = stepsPerBar(ts);
+  const presets = drumPresetsFor(ts);
   const track: TrackId | null = tab === 'drums' ? null : tab;
   const notes = track ? ed[track] : [];
   const selected = notes.find((n) => n.id === selectedId) ?? null;
-  const pattern = useMemo(() => eventsToPattern(ed.drums), [ed.drums]);
+  const pattern = useMemo(() => eventsToPattern(ed.drums, steps), [ed.drums, steps]);
   const playheadTick = position !== null ? (position * ed.bpm * TICKS_PER_BEAT) / 60 : null;
 
   const setNotes = (next: NoteEvent[]) => track && ed.setTrack(track, next);
@@ -112,7 +114,7 @@ export function ComposePage() {
   const play = () => {
     // ドラムは1小節目のパターンを、今の曲の長さに合わせて並べ直してから鳴らす
     const drums = ed.drums.length > 0 ? patternToEvents(pattern, lengthTicks) : [];
-    const events = compositionSequence({ chords: ed.chords, melody: ed.melody, bass: ed.bass, drums, chordRhythm: ed.chordRhythm }, on);
+    const events = compositionSequence({ chords: ed.chords, melody: ed.melody, bass: ed.bass, drums, chordRhythm: ed.chordRhythm, timeSignature: ts }, on);
     if (events.length === 0) return;
     void audio.playSequence(events, ed.bpm, { loop, lengthBeats: lengthTicks / TICKS_PER_BEAT });
   };
@@ -153,7 +155,7 @@ export function ComposePage() {
           <div className="min-w-0">
             <p className="truncate font-bold">{ed.title}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              キー：{keyName(ed.key, 'unicode')}　BPM：{ed.bpm}　{lengthTicks / TICKS_PER_BAR} 小節
+              キー：{keyName(ed.key, 'unicode')}　BPM：{ed.bpm}　拍子：{timeSignatureLabel(ts)}　{lengthTicks / barTicks(ts)} 小節
               {ed.chords.length > 0 ? ed.chords.map((c) => formatChordSymbol(c, { style: chordStyle, accidentals: 'unicode' })).join(' → ') : 'コード進行なし'}
             </p>
           </div>
@@ -319,7 +321,7 @@ export function ComposePage() {
                       title={p.description}
                       onClick={() => {
                         if (ed.chords.length === 0) return;
-                        if (ed.bass.length === 0 || window.confirm('今のベースラインを置き換えますか？')) ed.setTrack('bass', bassLine(ed.chords, ed.key, p.id));
+                        if (ed.bass.length === 0 || window.confirm('今のベースラインを置き換えますか？')) ed.setTrack('bass', bassLine(ed.chords, ed.key, p.id, ts));
                       }}
                     >
                       {p.label}
@@ -353,6 +355,7 @@ export function ComposePage() {
               playheadTick={playheadTick}
               octaveConvention={octaveConvention}
               chordStyle={chordStyle}
+              timeSignature={ts}
               ariaLabel={track === 'melody' ? 'メロディーのピアノロール' : 'ベースのピアノロール'}
               onAdd={(midi, tick) => {
                 const n = makeNote(midi, ed.key, tick, Math.min(noteLength, lengthTicks - tick));
@@ -373,7 +376,7 @@ export function ComposePage() {
                   <p className="font-bold">
                     選んだ音符：{formatPitch(selected.pitch, { octaveConvention, style: 'unicode' })}
                     <span className="ml-2 text-xs font-normal text-slate-600 dark:text-slate-300">
-                      {Math.floor(selected.startTick / TICKS_PER_BAR) + 1}小節目・{(selected.startTick % TICKS_PER_BAR) / TICKS_PER_BEAT + 1}拍目・長さ {selected.durationTick / TICKS_PER_BEAT}拍
+                      {barAndCount(selected.startTick, ts).bar}小節目・{barAndCount(selected.startTick, ts).count}{ts[1] === 8 ? '番目の8分音符' : '拍目'}・長さ {selected.durationTick / TICKS_PER_BEAT}拍（4分音符＝1拍）
                     </span>
                   </p>
                   <button type="button" onClick={() => setSelectedId(null)} className="text-xs text-slate-500 hover:underline">
@@ -445,20 +448,20 @@ export function ComposePage() {
         {tab === 'drums' && (
           <div className="mt-4 space-y-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              1小節分（16マス＝16分音符）のパターンを作ると、曲の全小節で繰り返します。マスを押すとオン・オフが切り替わります。
+              1小節分（{steps}マス。1マス＝16分音符）のパターンを作ると、曲の全小節で繰り返します。拍子に合ったパターンを選べます。マスを押すとオン・オフが切り替わります。
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {DRUM_PRESETS.map((p) => (
+              {presets.map((p) => (
                 <ChoiceButton key={p.id} selected={false} title={p.description} onClick={() => setPattern(p.pattern)}>
                   {p.name}
                 </ChoiceButton>
               ))}
-              <ChoiceButton selected={false} onClick={() => setPattern(emptyPattern())}>
+              <ChoiceButton selected={false} onClick={() => setPattern(emptyPattern(steps))}>
                 すべて消す
               </ChoiceButton>
             </div>
             <ul className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
-              {DRUM_PRESETS.map((p) => (
+              {presets.map((p) => (
                 <li key={p.id}>
                   <span className="font-semibold text-slate-700 dark:text-slate-300">{p.name}</span>：{p.description}
                 </li>
@@ -467,7 +470,8 @@ export function ComposePage() {
             <DrumGrid
               pattern={pattern}
               onChange={setPattern}
-              playingStep={playheadTick !== null ? Math.floor((playheadTick % TICKS_PER_BAR) / DRUM_TICKS) % STEPS_PER_BAR : null}
+              playingStep={playheadTick !== null ? Math.floor((playheadTick % barTicks(ts)) / DRUM_TICKS) % steps : null}
+              timeSignature={ts}
             />
           </div>
         )}

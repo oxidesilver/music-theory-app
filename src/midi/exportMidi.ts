@@ -56,7 +56,7 @@ export function buildMidi(src: MidiSource, parts: PartId[] = ALL_PARTS): Midi {
     if (part !== 'drums') track.instrument.number = info.program;
 
     if (part === 'chord') {
-      for (const hit of chordHits(src.chords, src.chordRhythm)) {
+      for (const hit of chordHits(src.chords, src.chordRhythm, src.timeSignature)) {
         for (const m of hit.midis) track.addNote({ midi: m, ticks: hit.start, durationTicks: hit.duration, velocity: 0.7 });
       }
     } else if (part === 'drums') {

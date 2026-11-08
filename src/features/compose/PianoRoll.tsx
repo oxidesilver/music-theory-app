@@ -6,7 +6,8 @@ import type { ScaleId } from '@/theory/scale';
 import type { NoteRole } from '@/theory/tension';
 import { formatChordSymbol, type ChordSymbolStyle } from '@/theory/chord';
 import type { ProgressionChord } from '@/features/progression/logic';
-import { DRUM_TICKS, TICKS_PER_BAR, TICKS_PER_BEAT, chordSpans, noteAt, noteRoleAt } from './logic';
+import { DRUM_TICKS, chordSpans, noteAt, noteRoleAt } from './logic';
+import { FOUR_FOUR, barAndCount, barTicks, countTicks, pulseTicks, type TimeSignature } from '@/theory/meter';
 
 export const ROLE_STYLE: Record<NoteRole, { fill: string; legend: string; nameJa: string }> = {
   'chord-tone': { fill: 'fill-rose-200/70 dark:fill-rose-500/25', legend: 'bg-rose-200 dark:bg-rose-500/40', nameJa: 'コードトーン' },
@@ -31,6 +32,8 @@ interface PianoRollProps {
   playheadTick: number | null;
   octaveConvention: OctaveConvention;
   chordStyle: ChordSymbolStyle;
+  /** 拍子（小節線・拍線の位置に使う） */
+  timeSignature?: TimeSignature;
   /** 空いているところを押した */
   onAdd: (midi: number, tick: number) => void;
   /** 音符を押した */
@@ -55,6 +58,7 @@ export function PianoRoll({
   playheadTick,
   octaveConvention,
   chordStyle,
+  timeSignature = FOUR_FOUR,
   onAdd,
   onSelect,
   ariaLabel,
@@ -65,6 +69,9 @@ export function PianoRoll({
   const width = lengthTicks * pxPerTick;
   const height = rows.length * ROW_H;
   const spans = chordSpans(chords);
+  const bar = barTicks(timeSignature);
+  const pulse = pulseTicks(timeSignature);
+  const count = countTicks(timeSignature);
 
   // 行ごと・コードごとの音の役割（色分け）を先に計算しておく
   const roleCells = useMemo(() => {
@@ -148,7 +155,7 @@ export function PianoRoll({
                 x2={t * pxPerTick}
                 y1={0}
                 y2={height}
-                className={t % TICKS_PER_BAR === 0 ? 'stroke-slate-500' : t % TICKS_PER_BEAT === 0 ? 'stroke-slate-300 dark:stroke-slate-600' : 'stroke-slate-200/70 dark:stroke-slate-800'}
+                className={t % bar === 0 ? 'stroke-slate-500' : t % pulse === 0 ? 'stroke-slate-400 dark:stroke-slate-500' : t % count === 0 ? 'stroke-slate-300 dark:stroke-slate-600' : 'stroke-slate-200/70 dark:stroke-slate-800'}
               />
             ))}
             {/* 音符 */}
@@ -156,10 +163,9 @@ export function PianoRoll({
               const r = high - midiOf(n.pitch);
               if (r < 0 || r >= rows.length) return null;
               const selected = n.id === selectedId;
-              const bar = Math.floor(n.startTick / TICKS_PER_BAR) + 1;
-              const beat = (n.startTick % TICKS_PER_BAR) / TICKS_PER_BEAT + 1;
+              const { bar: barNo, count: beat } = barAndCount(n.startTick, timeSignature);
               return (
-                <g key={n.id} role="button" aria-label={`${formatPitch(n.pitch, { octaveConvention })} ${bar}小節目 ${beat}拍目`} aria-pressed={selected}>
+                <g key={n.id} role="button" aria-label={`${formatPitch(n.pitch, { octaveConvention })} ${barNo}小節目 ${beat}拍目`} aria-pressed={selected}>
                   <rect
                     x={n.startTick * pxPerTick + 1}
                     y={r * ROW_H + 2}

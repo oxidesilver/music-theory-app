@@ -4,7 +4,7 @@ import { Midi } from '@tonejs/midi';
 import { ALL_PARTS, midiBytes, midiFileName, type MidiSource } from './exportMidi';
 import { sourceFromSong } from './source';
 import { makeChord } from '@/features/progression/logic';
-import { DRUM_PRESETS, TICKS_PER_BAR, bassLine, makeNote, patternToEvents } from '@/features/compose/logic';
+import { DRUM_PRESETS, TICKS_PER_BAR, bassLine, drumPresetsFor, makeNote, patternToEvents } from '@/features/compose/logic';
 import { chordsToEvents } from '@/features/progression/editorStore';
 import { parseChordSymbol } from '@/theory/chord';
 import { makeKey } from '@/theory/key';
@@ -151,4 +151,30 @@ describe('ファイル名', () => {
     expect(midiFileName('王道進行', 'Melody')).toBe('王道進行_Melody.mid');
     expect(midiFileName('   ')).toBe('song.mid');
   });
+
+
+describe('3/4・6/8 拍子の MIDI', () => {
+  it('拍子の情報が書き込まれ、コードは1小節（1440 tick）ごとに並ぶ', () => {
+    for (const ts of [[3, 4], [6, 8]] as [number, number][]) {
+      const chords34 = ['C', 'G'].map((c) => makeChord(parseChordSymbol(c), 3));
+      const m = new Midi(midiBytes({ ...src, timeSignature: ts, chords: chords34, melody: [], bass: [], drums: [] }));
+      expect(m.header.timeSignatures[0]!.timeSignature).toEqual(ts);
+      expect([...new Set(m.tracks.find((t) => t.name === 'Chord')!.notes.map((n) => n.ticks))]).toEqual([0, 1440]);
+    }
+  });
+  it('保存した 6/8 の作品から書き出すとき、ドラムは12マスのパターンのまま曲の長さに並ぶ', () => {
+    const chords = Array.from({ length: 5 }, () => makeChord(parseChordSymbol('Am'), 3));
+    const now = new Date().toISOString();
+    const pattern = drumPresetsFor([6, 8])[0]!.pattern;
+    const song: Song = {
+      id: 's68', title: '6/8', key: makeKey('A', 'minor'), bpm: 80, timeSignature: [6, 8],
+      chords: chordsToEvents(chords), melody: [], bass: [], drums: patternToEvents(pattern, 1440 * 4),
+      instruments: { chord: 'piano', melody: 'synth', bass: 'bass' }, createdAt: now, updatedAt: now, schemaVersion: SONG_SCHEMA_VERSION,
+    };
+    const m = new Midi(midiBytes(sourceFromSong(song)));
+    expect(m.header.timeSignatures[0]!.timeSignature).toEqual([6, 8]);
+    // 5小節 × キック1回（1小節目の頭）
+    expect(m.tracks.find((t) => t.name === 'Drums')!.notes.filter((n) => n.midi === 36).map((n) => n.ticks)).toEqual([0, 1440, 2880, 4320, 5760]);
+  });
+});
 });

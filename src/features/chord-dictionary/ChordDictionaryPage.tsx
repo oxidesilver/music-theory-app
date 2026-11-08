@@ -180,7 +180,7 @@ export function ChordDictionaryPage() {
               <button
                 type="button"
                 onClick={() => {
-                  useEditor.getState().add({ root, quality }, 4);
+                  useEditor.getState().add({ root, quality });
                   navigate('/progression');
                 }}
                 className="min-h-11 rounded-xl px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"

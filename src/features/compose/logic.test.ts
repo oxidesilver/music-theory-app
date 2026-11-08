@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  chordHits,
+  drumPresetsFor,
   DRUM_PRESETS,
   TICKS_PER_BAR,
   addPassingNotes,
@@ -28,7 +30,7 @@ describe('曲の長さとコードの位置', () => {
     expect(songLengthTicks([])).toBe(TICKS_PER_BAR * 4);
     expect(songLengthTicks(prog('C G'))).toBe(TICKS_PER_BAR * 4);
     expect(songLengthTicks(prog('C G Am F Dm G'))).toBe(TICKS_PER_BAR * 6);
-    expect(songLengthTicks(prog('C'), [{ startTick: TICKS_PER_BAR * 5, durationTick: 10 }])).toBe(TICKS_PER_BAR * 6);
+    expect(songLengthTicks(prog('C'), [[{ startTick: TICKS_PER_BAR * 5, durationTick: 10 }]])).toBe(TICKS_PER_BAR * 6);
   });
   it('ある時刻に鳴っているコード', () => {
     const chords = prog('C G7');
@@ -143,5 +145,42 @@ describe('再生データ', () => {
     expect(noDrums).toHaveLength(1);
     expect(noDrums[0]!.midis.map((m) => m)).toEqual([60, 64, 67]);
     expect(midiOf(data.melody[0]!.pitch)).toBe(64);
+  });
+});
+
+describe('3/4・6/8 拍子', () => {
+  const T34: [number, number] = [3, 4];
+  const T68: [number, number] = [6, 8];
+  const bar = (beats: number, s: string) => s.split(' ').map((x) => makeChord(parseChordSymbol(x), beats));
+
+  it('曲の長さは拍子の小節単位（3/4 の最低4小節 = 5760 tick）', () => {
+    expect(songLengthTicks([], [], T34)).toBe(1440 * 4);
+    expect(songLengthTicks(bar(3, 'C F G C G'), [], T34)).toBe(1440 * 5);
+  });
+
+  it('ベース「1拍ごと」：3/4 は1小節に3つ、6/8 は付点4分音符ごとに2つ', () => {
+    expect(bassLine(bar(3, 'C'), C, 'quarter', T34).map((n) => n.startTick)).toEqual([0, 480, 960]);
+    expect(bassLine(bar(3, 'C'), C, 'quarter', T68).map((n) => n.startTick)).toEqual([0, 720]);
+    expect(bassLine(bar(3, 'C'), C, 'root-fifth', T34).map((n) => formatPitch(n.pitch)).join(' ')).toBe('C2 G2 C2');
+  });
+
+  it('コードの裏打ち：6/8 は「タ・チャ・チャ」の「チャ」（2・3・5・6番目の8分音符）', () => {
+    expect(chordHits(bar(3, 'C'), 'offbeat', T68).map((h) => h.start)).toEqual([240, 480, 960, 1200]);
+    expect(chordHits(bar(3, 'C'), 'offbeat', T34).map((h) => h.start)).toEqual([240, 720, 1200]);
+    expect(chordHits(bar(3, 'C'), 'quarter', T68).map((h) => h.start)).toEqual([0, 720]);
+  });
+
+  it('拍子ごとのドラムパターンは12マスで、1小節 = 1440 tick で繰り返す', () => {
+    for (const ts of [T34, T68]) {
+      for (const p of drumPresetsFor(ts)) {
+        expect(p.pattern.every((row) => row.length === 12), p.id).toBe(true);
+        const events = patternToEvents(p.pattern, 1440 * 2);
+        expect(events.every((e) => e.startTick < 2880)).toBe(true);
+        expect(eventsToPattern(events, 12)).toEqual(p.pattern);
+      }
+    }
+    const waltz = drumPresetsFor(T34).find((p) => p.id === 'waltz')!;
+    expect(patternToEvents(waltz.pattern, 1440 * 2).filter((e) => e.drum === 36).map((e) => e.startTick)).toEqual([0, 1440]);
+    expect(drumPresetsFor([4, 4])).toBe(DRUM_PRESETS);
   });
 });

@@ -1,14 +1,21 @@
 import { audio } from '@/audio/engine';
-import { DRUM_LANES, STEPS_PER_BAR, type DrumPattern } from './logic';
+import { DRUM_LANES, type DrumPattern } from './logic';
+import { FOUR_FOUR, isCompound, type TimeSignature } from '@/theory/meter';
 
 interface DrumGridProps {
   pattern: DrumPattern;
   onChange: (p: DrumPattern) => void;
   playingStep: number | null;
+  timeSignature?: TimeSignature;
 }
 
-/** 1小節分（16ステップ）のドラム入力。ここで作ったパターンを全小節で繰り返す */
-export function DrumGrid({ pattern, onChange, playingStep }: DrumGridProps) {
+/** 1小節分のドラム入力（4/4 は16マス、3/4・6/8 は12マス）。ここで作ったパターンを全小節で繰り返す */
+export function DrumGrid({ pattern, onChange, playingStep, timeSignature = FOUR_FOUR }: DrumGridProps) {
+  const steps = pattern[0]?.length ?? 16;
+  const compound = isCompound(timeSignature);
+  // 見出し：4/4・3/4 は「n拍」（4マスごと）、6/8 は8分音符の番号（2マスごと。1と4が強い）
+  const header = (s: number) => (compound ? (s % 2 === 0 ? `${s / 2 + 1}` : '') : s % 4 === 0 ? `${s / 4 + 1}拍` : s % 2 === 0 ? 'と' : '');
+  const strong = (s: number) => (compound ? s % 6 === 0 : s % 4 === 0);
   const toggle = (lane: number, step: number) => {
     const next = pattern.map((row) => [...row]);
     next[lane]![step] = !next[lane]![step];
@@ -22,9 +29,9 @@ export function DrumGrid({ pattern, onChange, playingStep }: DrumGridProps) {
         <thead>
           <tr>
             <th />
-            {Array.from({ length: STEPS_PER_BAR }, (_, s) => (
-              <th key={s} className={`w-8 text-[10px] font-normal ${s % 4 === 0 ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400'}`}>
-                {s % 4 === 0 ? `${s / 4 + 1}拍` : s % 2 === 0 ? 'と' : ''}
+            {Array.from({ length: steps }, (_, s) => (
+              <th key={s} className={`w-8 text-[10px] font-normal ${strong(s) ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400'}`}>
+                {header(s)}
               </th>
             ))}
           </tr>
@@ -46,7 +53,7 @@ export function DrumGrid({ pattern, onChange, playingStep }: DrumGridProps) {
                     onClick={() => toggle(li, s)}
                     className={[
                       'h-9 w-8 rounded-md border transition',
-                      on ? 'border-brand-700 bg-brand-500' : s % 4 === 0 ? 'border-slate-300 bg-slate-100 dark:border-slate-600 dark:bg-slate-800' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900',
+                      on ? 'border-brand-700 bg-brand-500' : strong(s) ? 'border-slate-300 bg-slate-100 dark:border-slate-600 dark:bg-slate-800' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900',
                       playingStep === s ? 'ring-2 ring-amber-400' : '',
                     ].join(' ')}
                   />

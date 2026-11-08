@@ -137,4 +137,37 @@ describe('コード進行メーカー', () => {
     expect(router.state.location.pathname).toBe('/progression');
     expect(chordNamesInTimeline()).toEqual(['Dm7']);
   });
+
+  it('拍子を 3/4 にすると、コードは1小節＝3拍で追加され、長さの選択肢も変わる', async () => {
+    renderAt('/progression');
+    await userEvent.click(within(screen.getByRole('group', { name: '拍子' })).getByRole('button', { name: '3/4' }));
+    await userEvent.click(screen.getByRole('button', { name: /^CⅠ$/ }));
+    expect(useEditor.getState().chords[0]!.durationBeats).toBe(3);
+    expect(screen.getByRole('button', { name: '3拍（1小節）' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/拍子 3\/4・全 3 拍（1 小節）/)).toBeInTheDocument();
+  });
+
+  it('拍子を変えると、1小節ちょうどのコードは新しい拍子の1小節に合わせ、ドラムは消える（確認あり）', async () => {
+    useEditor.getState().setChords([makeChord(parseChordSymbol('C'), 4), makeChord(parseChordSymbol('G'), 2)]);
+    useEditor.getState().setDrums([{ id: 'd', drum: 36, startTick: 0, durationTick: 120, velocity: 100 }]);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderAt('/progression');
+    await userEvent.click(within(screen.getByRole('group', { name: '拍子' })).getByRole('button', { name: '6/8' }));
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(useEditor.getState().timeSignature).toEqual([6, 8]);
+    expect(useEditor.getState().chords.map((c) => c.durationBeats)).toEqual([3, 2]);
+    expect(useEditor.getState().drums).toEqual([]);
+    confirmSpy.mockRestore();
+  });
+
+  it('拍子は保存され、開き直しても元に戻る', async () => {
+    useEditor.getState().setTimeSignature([3, 4]);
+    useEditor.getState().add(parseChordSymbol('C'));
+    const id = await useEditor.getState().save();
+    expect((await db.songs.get(id))?.timeSignature).toEqual([3, 4]);
+    useEditor.getState().newSong();
+    expect(useEditor.getState().timeSignature).toEqual([4, 4]);
+    await useEditor.getState().load(id);
+    expect(useEditor.getState().timeSignature).toEqual([3, 4]);
+  });
 });

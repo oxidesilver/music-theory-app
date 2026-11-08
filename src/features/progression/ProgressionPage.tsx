@@ -16,10 +16,10 @@ import { COMMON_MAJOR_TONICS, COMMON_MINOR_TONICS, keyName, makeKey, type Musica
 import { formatPitchClass, midiOf, parsePitchClass } from '@/theory/pitch';
 import { romanNumeral } from '@/theory/roman';
 import { useEditor, MAX_BPM, MIN_BPM } from './editorStore';
+import { TIME_SIGNATURES, barBeats, durationOptions, isCompound, timeSignatureLabel } from '@/theory/meter';
 import { ExportMidiPanel } from '@/midi/ExportMidiPanel';
 import { sourceFromEditor } from '@/midi/source';
 import {
-  DURATION_OPTIONS,
   PRESET_PROGRESSIONS,
   chordIndexAt,
   chordVoicing,
@@ -90,12 +90,21 @@ export function ProgressionPage() {
   const selected = ed.selected !== null ? ed.chords[ed.selected] : undefined;
   const selectedAnalysis: ChordAnalysis | undefined = ed.selected !== null ? analysis.chords[ed.selected] : undefined;
   const mood = moodTendency(ed.key, ed.chords);
+  // 並べたコードの表示：1行に小節がちょうど収まるようにマスの単位と列数を決める
+  const compound = isCompound(ed.timeSignature);
+  const unit = compound ? 0.5 : 1; // 1マスの長さ（拍）。6/8 は8分音符
+  const bar = barBeats(ed.timeSignature) / unit; // 1小節のマス数
+  const grid = {
+    cls: bar === 4 ? 'grid-cols-8 md:grid-cols-16' : 'grid-cols-6 md:grid-cols-12',
+    span: (beats: number) => Math.max(1, Math.min(Math.round(beats / unit), bar === 4 ? 8 : 6)),
+    note: compound ? '1マス＝8分音符1つ（6マスで1小節）。' : `1マス＝1拍（${bar}マスで1小節）。`,
+  };
 
   const preview = (c: ChordSpec) => void audio.chord(chordVoicing(c).map(midiOf), { duration: 1.2 });
 
   const choose = (c: ChordSpec) => {
     if (replaceMode && ed.selected !== null) ed.replace(ed.selected, c);
-    else ed.add(c, 4);
+    else ed.add(c);
     preview(c);
   };
 
@@ -217,6 +226,26 @@ export function ProgressionPage() {
               キーを変えたら、並べたコードも一緒に移調する
             </label>
           </div>
+          <div>
+            <p className="mb-1 text-xs font-semibold">拍子</p>
+            <div className="flex gap-1.5" role="group" aria-label="拍子">
+              {TIME_SIGNATURES.map((t) => (
+                <ChoiceButton
+                  key={t.id}
+                  selected={timeSignatureLabel(ed.timeSignature) === t.id}
+                  title={t.description}
+                  onClick={() => {
+                    if (timeSignatureLabel(ed.timeSignature) === t.id) return;
+                    if (ed.drums.length > 0 && !window.confirm('拍子を変えると、ドラムのパターンは消えます（1小節のマス数が変わるため）。変えますか？')) return;
+                    audio.stop();
+                    ed.setTimeSignature(t.value);
+                  }}
+                >
+                  {t.label}
+                </ChoiceButton>
+              ))}
+            </div>
+          </div>
           <div className="min-w-48 flex-1">
             <p className="mb-1 text-xs font-semibold">
               テンポ（BPM）：<span data-testid="bpm">{ed.bpm}</span>
@@ -262,7 +291,7 @@ export function ProgressionPage() {
             <input type="checkbox" checked={withBass} onChange={(e) => setWithBass(e.target.checked)} /> ベースも鳴らす
           </label>
           <span className="text-xs text-slate-500 dark:text-slate-400">
-            全 {totalBeats(ed.chords)} 拍（{totalBeats(ed.chords) / 4} 小節）・音量は「設定」で変更できます
+            拍子 {timeSignatureLabel(ed.timeSignature)}・全 {totalBeats(ed.chords)} 拍（{totalBeats(ed.chords) / barBeats(ed.timeSignature)} 小節）・音量は「設定」で変更できます
           </span>
         </div>
         <SoundHint />
@@ -287,13 +316,16 @@ export function ProgressionPage() {
             まだコードがありません。下の「コードを選ぶ」から追加するか、「定番進行」を読み込んでみましょう。
           </p>
         ) : (
-          <ol className="mt-3 grid grid-cols-8 gap-2 md:grid-cols-16" aria-label="並べたコード">
+          <ol
+            className={`mt-3 grid gap-2 ${grid.cls}`}
+            aria-label="並べたコード"
+          >
             {ed.chords.map((c, i) => {
               const a = analysis.chords[i]!;
               const isSel = ed.selected === i;
               const isPlaying = playingIndex === i;
               return (
-                <li key={c.id} style={{ gridColumn: `span ${Math.min(c.durationBeats, 8)} / span ${Math.min(c.durationBeats, 8)}` }}>
+                <li key={c.id} style={{ gridColumn: `span ${grid.span(c.durationBeats)} / span ${grid.span(c.durationBeats)}` }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -320,7 +352,7 @@ export function ProgressionPage() {
           </ol>
         )}
         <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-          T＝トニック（安定）／SD＝サブドミナント（展開）／D＝ドミナント（緊張）、★＝キーのスケール外の音を含むコード。1マス＝1拍。
+          T＝トニック（安定）／SD＝サブドミナント（展開）／D＝ドミナント（緊張）、★＝キーのスケール外の音を含むコード。{grid.note}
         </p>
       </Card>
 
@@ -354,9 +386,9 @@ export function ProgressionPage() {
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <span className="text-xs font-semibold">長さ：</span>
-            {DURATION_OPTIONS.map((b) => (
-              <ChoiceButton key={b} selected={selected.durationBeats === b} onClick={() => ed.setDuration(ed.selected!, b)}>
-                {b}拍{b === 4 ? '（1小節）' : b === 8 ? '（2小節）' : ''}
+            {durationOptions(ed.timeSignature).map((o) => (
+              <ChoiceButton key={o.beats} selected={selected.durationBeats === o.beats} onClick={() => ed.setDuration(ed.selected!, o.beats)}>
+                {o.label}
               </ChoiceButton>
             ))}
           </div>
@@ -464,7 +496,7 @@ export function ProgressionPage() {
               </div>
               <ul className="mt-3 space-y-2">
                 {PRESET_PROGRESSIONS.filter((p) => p.mode === ed.key.mode && (!moodFilter || p.moods.includes(moodFilter))).map((p) => {
-                  const chords = realizePreset(ed.key, p);
+                  const chords = realizePreset(ed.key, p, barBeats(ed.timeSignature));
                   return (
                     <li key={p.id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                       <div className="flex flex-wrap items-center justify-between gap-2">
