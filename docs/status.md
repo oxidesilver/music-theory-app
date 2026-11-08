@@ -23,7 +23,7 @@
 教材：第1〜9章すべて完成（全67レッスン）。教材に書いた音楽理論の事実は src/content/lessons/content.test.ts で理論エンジンと照合している。
 （main ブランチに Push すると、GitHub Actions がテスト → ビルド → 公開を自動で行う）
 
-自動テスト：588件すべて合格（`npm test`）。各 Phase 完了時にローカル Commit 済み（GitHub へはまだ Push していない）。
+自動テスト：784件すべて合格（`npm test`）。五線譜の表示（src/components/Staff）も追加済み。
 
 ## 今後の候補（未着手）
 
