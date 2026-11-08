@@ -39,11 +39,11 @@ describe('学習機能', () => {
     vi.clearAllMocks();
   });
 
-  it('レッスン一覧に第1〜9章が並び、第7章以降は「準備中」', async () => {
+  it('レッスン一覧に第1〜9章が並び、「準備中」の章は無い', async () => {
     renderAt('/learn');
     expect(await screen.findByText(/第1章.*音楽の基礎/)).toBeInTheDocument();
     expect(screen.getByText(/第9章.*実践的な作曲理論/)).toBeInTheDocument();
-    expect(screen.getAllByText('準備中')).toHaveLength(3);
+    expect(screen.queryAllByText('準備中')).toHaveLength(0);
   });
 
   it('レッスン画面に7つの構成（説明・図解・鍵盤と音・使用例・DTM・クイズ）が表示される', async () => {
@@ -83,7 +83,7 @@ describe('学習機能', () => {
     await db.lessonProgress.put({ lessonId: 'ch1-l1', status: 'completed', updatedAt: now, completedAt: now });
     renderAt('/learn');
     expect(await screen.findByRole('link', { name: /続きから学ぶ：ピアノ鍵盤の仕組み/ })).toHaveAttribute('href', '/learn/ch1-l2');
-    expect(screen.getByText('1 / 39 レッスン完了')).toBeInTheDocument();
+    expect(screen.getByText('1 / 67 レッスン完了')).toBeInTheDocument();
   });
 
   it('文章中の音名は設定に合わせて表示される（中央のド：FL Studio 式 C5 ／ 一般的な表記 C4）', async () => {

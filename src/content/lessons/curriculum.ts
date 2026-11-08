@@ -6,6 +6,9 @@ import { CH3_LESSONS } from './ch3';
 import { CH4_LESSONS } from './ch4';
 import { CH5_LESSONS } from './ch5';
 import { CH6_LESSONS } from './ch6';
+import { CH7_LESSONS } from './ch7';
+import { CH8_LESSONS } from './ch8';
+import { CH9_LESSONS } from './ch9';
 
 export const CHAPTERS: Chapter[] = [
   {
@@ -61,24 +64,24 @@ export const CHAPTERS: Chapter[] = [
     number: 7,
     title: 'コード進行',
     description: '定番の進行と、その分析',
-    plannedTopics: ['コード進行とは', 'トニックからの進行', 'ドミナントからの解決', '定番コード進行', 'カノン進行', '王道進行', '小室進行', 'マイナーキーの定番進行', 'コード進行の分析'],
-    lessons: [],
+    plannedTopics: [],
+    lessons: CH7_LESSONS,
   },
   {
     id: 'ch8',
     number: 8,
     title: '応用理論',
     description: 'セブンス・テンション・借用和音・転調',
-    plannedTopics: ['セブンスコード', 'テンションコード', '9th・11th・13th', 'セカンダリードミナント', 'サブドミナントマイナー', 'モーダルインターチェンジ', 'ディミニッシュの活用', '転調', '代理コード', 'ノンダイアトニックコード'],
-    lessons: [],
+    plannedTopics: [],
+    lessons: CH8_LESSONS,
   },
   {
     id: 'ch9',
     number: 9,
     title: '実践的な作曲理論',
     description: 'メロディー・ベース・リズム・構成',
-    plannedTopics: ['メロディーの作り方', 'コードとメロディーの関係', 'コードトーン', 'アプローチノート', 'ベースライン', 'ボイシング', 'リズムとグルーヴ', '楽曲構成', 'アレンジの基礎'],
-    lessons: [],
+    plannedTopics: [],
+    lessons: CH9_LESSONS,
   },
 ];
 

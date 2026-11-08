@@ -4,7 +4,8 @@ import { PianoKeyboard, type KeyMark } from '@/components/PianoKeyboard/PianoKey
 import { ChoiceButton } from '@/components/ui/ChoiceButton';
 import { audio } from '@/audio/engine';
 import { useSettings } from '@/stores/settingsStore';
-import { CHORD_QUALITIES, chordPitches, chordStructure, formatChordSymbol, type ChordQualityId } from '@/theory/chord';
+import { CHORD_QUALITIES, chordPitches, chordStructure, formatChordSymbol, parseChordSymbol, type ChordQualityId } from '@/theory/chord';
+import { CATEGORY_LABEL_JA, analyzeProgression } from '@/theory/analysis';
 import { FUNCTION_INFO, diatonicChords } from '@/theory/diatonic';
 import { intervalNameJa, parseInterval } from '@/theory/interval';
 import { COMMON_MAJOR_TONICS, COMMON_MINOR_TONICS, commonKeys, keyName, keyNameJa, keySignature, makeKey, relativeKey } from '@/theory/key';
@@ -110,6 +111,64 @@ export function ChordBuilder({ diagram }: { diagram: Extract<Diagram, { kind: 'c
           ♪ 1音ずつ
         </button>
       </div>
+    </div>
+  );
+}
+
+/** コード進行を分析した表（ローマ数字・分類・役割・解決） */
+export function ProgressionAnalysis({ diagram }: { diagram: Extract<Diagram, { kind: 'progression-analysis' }> }) {
+  const style = useSettings((s) => s.romanStyle);
+  const key = makeKey(diagram.tonic, diagram.mode);
+  const specs = diagram.chords.map(parseChordSymbol);
+  const result = analyzeProgression(key, specs, { style });
+  const play = () =>
+    void audio.playSequence(
+      result.chords.map((a, i) => ({ midis: chordVoicing(a.chord).map(midiOf), startBeat: i * 2, durationBeats: 2 })),
+      96,
+    );
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold">
+          {diagram.title ?? '進行の分析'}（キー：{keyName(key, 'unicode')}）
+        </p>
+        <button type="button" onClick={play} className="min-h-10 rounded-lg bg-brand-600 px-3 text-sm font-semibold text-white hover:bg-brand-700">
+          ▶ 進行を鳴らす
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[22rem] text-sm" aria-label={diagram.title ?? '進行の分析'}>
+          <thead className="text-left text-xs text-slate-500 dark:text-slate-400">
+            <tr>
+              <th className="py-1 font-normal">コード</th>
+              <th className="py-1 font-normal">ローマ数字</th>
+              <th className="py-1 font-normal">役割</th>
+              <th className="py-1 font-normal">分類</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result.chords.map((a, i) => (
+              <tr key={i} className="border-t border-slate-100 dark:border-slate-800">
+                <td className="py-1.5 font-semibold">{formatChordSymbol(specs[i]!, { style, accidentals: 'unicode' })}</td>
+                <td className="py-1.5">
+                  {a.roman}
+                  {a.secondaryOf && <span className="ml-1 text-xs text-violet-600 dark:text-violet-300">（{a.secondaryOf.label}）</span>}
+                </td>
+                <td className="py-1.5 text-xs">{a.functions.map((f) => FUNCTION_INFO[f].short).join('／') || '—'}</td>
+                <td className="py-1.5 text-xs">{CATEGORY_LABEL_JA[a.category]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {result.resolutions.length > 0 && (
+        <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300">
+          {result.resolutions.map((r) => (
+            <li key={r.index}>{r.description}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

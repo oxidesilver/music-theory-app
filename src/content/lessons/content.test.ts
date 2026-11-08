@@ -8,6 +8,8 @@ import { formatPitchClass, parsePitch, parsePitchClass } from '@/theory/pitch';
 import { scaleNotes } from '@/theory/scale';
 import { CHORD_QUALITIES, chordPitches, chordTones, formatChordSymbol, parseChordSymbol } from '@/theory/chord';
 import { diatonicChords } from '@/theory/diatonic';
+import { analyzeProgression, analyzeChord } from '@/theory/analysis';
+import { tensionsFor } from '@/theory/tension';
 import { keyName, keySignature, makeKey, parallelKey, relativeKey } from '@/theory/key';
 import { romanNumeral, chordFromRoman } from '@/theory/roman';
 import { formatPitch, midiOf } from '@/theory/pitch';
@@ -24,9 +26,10 @@ const allText = (l: Lesson): string[] => [
 ];
 
 describe('教材データの形', () => {
-  it('第1〜6章に合計39レッスンがある', () => {
-    expect(CHAPTERS.slice(0, 6).map((c) => c.lessons.length)).toEqual([5, 6, 7, 7, 8, 6]);
-    expect(ALL_LESSONS).toHaveLength(39);
+  it('第1〜9章すべてに教材があり、合計67レッスン', () => {
+    expect(CHAPTERS.map((c) => c.lessons.length)).toEqual([5, 6, 7, 7, 8, 6, 9, 10, 9]);
+    expect(ALL_LESSONS).toHaveLength(67);
+    expect(CHAPTERS.every((c) => c.plannedTopics.length === 0)).toBe(true);
   });
 
   it('レッスン ID は重複しない', () => {
@@ -80,6 +83,7 @@ describe('図解の正しさ（理論エンジンで計算した結果と一致�
         if (d.root) expect(() => parsePitchClass(d.root!)).not.toThrow();
       }
       if (d.kind === 'diatonic-table') expect(diatonicChords(makeKey(d.tonic ?? 'C', d.mode), { scale: d.scale })).toHaveLength(7);
+      if (d.kind === 'progression-analysis') expect(() => analyzeProgression(makeKey(d.tonic, d.mode), d.chords.map(parseChordSymbol)), id).not.toThrow();
     }
   });
 
@@ -181,5 +185,61 @@ describe('教材に書いた事実の確認', () => {
     expect(common('F', 'Dm')).toBe(2);
     expect(tones('G7').split(' ')).toEqual(expect.arrayContaining(['B', 'F']));
     expect(tones('Bdim').split(' ')).toEqual(expect.arrayContaining(['B', 'F']));
+  });
+const roman = (tonic: string, mode: 'major' | 'minor', chordsList: string) => chordsList.split(' ').map((c) => romanNumeral(makeKey(tonic, mode), parseChordSymbol(c))).join('–');
+  const fromRoman = (tonic: string, mode: 'major' | 'minor', romans: string) => romans.split(' ').map((r) => formatChordSymbol(chordFromRoman(makeKey(tonic, mode), r), { accidentals: 'unicode' })).join(' ');
+  const cat = (tonic: string, c: string) => analyzeChord(makeKey(tonic, 'major'), parseChordSymbol(c));
+
+  it('第7章のコード進行', () => {
+    const C = 'C';
+    expect(roman(C, 'major', 'C G Am Em F C F G')).toBe('Ⅰ–Ⅴ–Ⅵm–Ⅲm–Ⅳ–Ⅰ–Ⅳ–Ⅴ');
+    expect(roman(C, 'major', 'Fmaj7 G7 Em7 Am')).toBe('Ⅳ△7–Ⅴ7–Ⅲm7–Ⅵm');
+    expect(roman(C, 'major', 'Am F G C')).toBe('Ⅵm–Ⅳ–Ⅴ–Ⅰ');
+    expect(fromRoman('G', 'major', 'Ⅰ Ⅴ Ⅵm Ⅳ')).toBe('G D Em C');
+    expect(fromRoman('D', 'major', 'Ⅰ Ⅴ Ⅵm Ⅲm')).toBe('D A Bm F♯m');
+    expect(fromRoman('G', 'major', 'Ⅵm Ⅳ Ⅴ Ⅰ')).toBe('Em C D G');
+    expect(fromRoman('A', 'minor', 'Ⅰm Ⅵ Ⅶ Ⅰm')).toBe('Am F G Am');
+    expect(fromRoman('A', 'minor', 'Ⅰm Ⅶ Ⅵ Ⅴ')).toBe('Am G F E');
+    // カノン進行の分数コード版のベースは C B A G F E F G
+    expect('C G/B Am Em/G F C/E F G'.split(' ').map((c) => formatPitchClass(parseChordSymbol(c).bass ?? parseChordSymbol(c).root)).join(' ')).toBe('C B A G F E F G');
+    expect(cat('C', 'E7').category).toBe('secondary-dominant');
+    expect(cat('C', 'Fm').category).toBe('borrowed');
+    expect(analyzeProgression(makeKey('C', 'major'), ['Dm', 'G7', 'C'].map(parseChordSymbol)).resolutions[0]?.kind).toBe('dominant');
+    expect(tones('G7').split(' ')).toEqual(['G', 'B', 'D', 'F']);
+  });
+
+  it('第8章の応用理論', () => {
+    expect(tones('C7')).toBe('C E G B♭');
+    expect(tones('Cmaj7')).toBe('C E G B');
+    expect(tones('Cm7b5')).toBe('C E♭ G♭ B♭');
+    expect(tones('Cadd9')).toBe('C E G D');
+    expect(chordTones(parseChordSymbol('C11').root, '11', 'common').map((p) => formatPitchClass(p))).not.toContain('E');
+    const t = tensionsFor(parsePitchClass('C'), 'maj7', scaleNotes(parsePitchClass('C'), 'major'));
+    expect(t.find((x) => x.label === '11')?.caution).toBe(true);
+    expect(t.find((x) => x.label === '9')?.caution).toBe(false);
+    for (const [c, label] of [['A7', 'Ⅴ7/Ⅱm'], ['E7', 'Ⅴ7/Ⅵm'], ['D7', 'Ⅴ7/Ⅴ'], ['C7', 'Ⅴ7/Ⅳ']] as const) expect(cat('C', c).secondaryOf?.label).toBe(label);
+    for (const c of ['Fm', 'Ab', 'Bb', 'Eb']) expect(cat('C', c).category, c).toBe('borrowed');
+    expect(cat('C', 'Fm').subdominantMinor).toBe(true);
+    expect(fromRoman('A', 'major', 'Ⅰ ♭Ⅶ Ⅳ')).toBe('A G D');
+    // dim7 は短3度の等間隔：Cdim7 と Adim7 は同じ鍵盤
+    const semis = (s: string) => chordTones(parseChordSymbol(s).root, parseChordSymbol(s).quality).map((x) => midiOf({ ...x, octave: 4 }) % 12).sort((a, b) => a - b);
+    expect(semis('Cdim7')).toEqual(semis('Adim7'));
+    // G♯dim7 と G7 はトライトーン（B・F）を共有、G7 と D♭7 も同じトライトーン
+    expect(tones('G#dim7').split(' ')).toEqual(expect.arrayContaining(['B', 'F']));
+    const pcs = (s: string) => semis(s);
+    expect(pcs('Db7')).toEqual(expect.arrayContaining([5, 11]));
+    expect(pcs('G7')).toEqual(expect.arrayContaining([5, 11]));
+    expect(cat('C', 'Db7').category).toBe('non-diatonic');
+    // C メジャーと G メジャーは6音が共通
+    const shared = scaleNotes(parsePitchClass('C'), 'major').filter((n) => scaleNotes(parsePitchClass('G'), 'major').some((m) => formatPitchClass(m) === formatPitchClass(n)));
+    expect(shared).toHaveLength(6);
+    expect(roman('G', 'major', 'Am')).toBe('Ⅱm');
+  });
+
+  it('第9章の実践', () => {
+    expect(tones('Dm7')).toBe('D F A C');
+    expect(tones('Am')).toBe('A C E');
+    expect(chordPitches({ ...parsePitchClass('F'), octave: 3 }, 'maj', { inversion: 2 }).map((p) => formatPitchClass(p)).join(' ')).toBe('C F A');
+    expect(formatInterval(intervalBetween(parsePitch('C4'), parsePitch('G4')))).toBe('P5');
   });
 });

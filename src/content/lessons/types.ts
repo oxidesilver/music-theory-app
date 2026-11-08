@@ -47,7 +47,9 @@ export type Diagram =
   /** ルートとコードの種類を選んで、構成音と音程を確かめる */
   | { kind: 'chord-builder'; qualities: ChordQualityId[]; root?: string }
   /** キーを選んで、ダイアトニックコードの一覧（ローマ数字・役割・音）を見る */
-  | { kind: 'diatonic-table'; mode: 'major' | 'minor'; tonic?: string; sevenths?: boolean; scale?: ScaleId };
+  | { kind: 'diatonic-table'; mode: 'major' | 'minor'; tonic?: string; sevenths?: boolean; scale?: ScaleId }
+  /** コード進行を分析した表（ローマ数字・分類・役割・解決） */
+  | { kind: 'progression-analysis'; tonic: string; mode: 'major' | 'minor'; chords: string[]; title?: string };
 
 export interface Term {
   term: string;

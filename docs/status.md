@@ -19,13 +19,14 @@
 | 10 | 仕上げ（バックアップと復元・スマホ改善・GitHub Pages 公開） | ✅（iPhone 実機の確認待ち） |
 
 公開アドレス：https://oxidesilver.github.io/music-theory-app/
+
+教材：第1〜9章すべて完成（全67レッスン）。教材に書いた音楽理論の事実は src/content/lessons/content.test.ts で理論エンジンと照合している。
 （main ブランチに Push すると、GitHub Actions がテスト → ビルド → 公開を自動で行う）
 
 自動テスト：588件すべて合格（`npm test`）。各 Phase 完了時にローカル Commit 済み（GitHub へはまだ Push していない）。
 
 ## 今後の候補（未着手）
 
-- 第4〜9章の教材の執筆（キー・コードの基礎・ダイアトニック・コード進行・応用理論・実践的な作曲理論）
 - 五線譜の表示
 - 3/4・6/8 拍子への対応
 - 高品質なサンプル音源への差し替え
