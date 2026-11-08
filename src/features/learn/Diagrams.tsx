@@ -20,6 +20,7 @@ import { resolveNotes, stepLabel } from '@/content/lessons/resolve';
 import type { Diagram } from '@/content/lessons/types';
 import { keyboardRange } from './DemoPlayer';
 import { ChordBuilder, DiatonicTable, KeySignatureTable, ProgressionAnalysis } from './TheoryDiagrams';
+import { Staff } from '@/components/Staff/Staff';
 
 function useFmt() {
   const octaveConvention = useSettings((s) => s.octaveConvention);
@@ -195,6 +196,7 @@ function ScaleExplorer({ diagram }: { diagram: Extract<Diagram, { kind: 'scale-e
         ：{notes.slice(0, -1).map((p) => formatPitchClass(p, 'unicode')).join(' ')}
       </p>
       <p className="text-xs text-slate-500 dark:text-slate-400">{SCALES[scale].summary}</p>
+      <Staff groups={notes.map((n) => [n])} clef="treble" ariaLabel="スケールの五線譜" />
       <PianoKeyboard from={from} to={to} marks={marks} cLabel={fmt} keyName={fmt} ariaLabel="スケールの鍵盤" />
       <button
         type="button"

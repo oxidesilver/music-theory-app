@@ -6,6 +6,7 @@ import { formatChordSymbol, parseChordSymbol } from '@/theory/chord';
 import { resolveNotes, resolveProgression } from '@/content/lessons/resolve';
 import type { Demo } from '@/content/lessons/types';
 import { RichText } from './RichText';
+import { Staff } from '@/components/Staff/Staff';
 
 /** コード進行を鳴らす速さ（BPM）と、1つのコードの長さ（拍） */
 const PROGRESSION_BPM = 96;
@@ -86,6 +87,11 @@ export function DemoPlayer({ demo }: { demo: Demo }) {
         </p>
       ) : (
         <p className="mt-2 text-sm">{notes.map((p) => formatPitch(p, { octaveConvention, style: 'unicode' })).join(demo.mode === 'chord' ? '・' : ' → ')}</p>
+      )}
+      {!isProgression && (
+        <div className="mt-3 max-w-md">
+          <Staff groups={demo.mode === 'chord' ? [notes] : notes.map((n) => [n])} ariaLabel={`${demo.title}の五線譜`} />
+        </div>
       )}
       {showKeyboard && (
         <div className="mt-3">

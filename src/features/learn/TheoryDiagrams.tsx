@@ -9,12 +9,13 @@ import { CATEGORY_LABEL_JA, analyzeProgression } from '@/theory/analysis';
 import { FUNCTION_INFO, diatonicChords } from '@/theory/diatonic';
 import { intervalNameJa, parseInterval } from '@/theory/interval';
 import { COMMON_MAJOR_TONICS, COMMON_MINOR_TONICS, commonKeys, keyName, keyNameJa, keySignature, makeKey, relativeKey } from '@/theory/key';
-import { formatPitch, formatPitchClass, midiOf, parsePitchClass, pitchFromMidi } from '@/theory/pitch';
+import { formatPitch, formatPitchClass, letterIndex, midiOf, parsePitchClass, pitchFromMidi } from '@/theory/pitch';
 import { romanNumeral } from '@/theory/roman';
 import { scaleNotes, type ScaleId } from '@/theory/scale';
 import { chordVoicing } from '@/features/progression/logic';
 import type { Diagram } from '@/content/lessons/types';
 import { keyboardRange } from './DemoPlayer';
+import { Staff } from '@/components/Staff/Staff';
 
 const u = formatPitchClass;
 
@@ -26,7 +27,20 @@ function useFmt() {
 /** キーと調号の一覧（♯ の多い順・♭ の多い順に並べる） */
 export function KeySignatureTable({ diagram }: { diagram: Extract<Diagram, { kind: 'key-signatures' }> }) {
   const keys = commonKeys(diagram.mode).sort((a, b) => keySignature(a).count - keySignature(b).count);
+  const [selected, setSelected] = useState(keyName(keys.find((k) => keySignature(k).count === 2) ?? keys[0]!));
+  const selectedKey = keys.find((k) => keyName(k) === selected) ?? keys[0]!;
+  // 主音を五線の中に収まる高さ（E4〜D5 あたり）に置く
+  const tonicPitch = { ...selectedKey.tonic, octave: ['C', 'D'].includes(selectedKey.tonic.letter) ? 5 : 4 };
   return (
+    <div className="space-y-3">
+      <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60">
+        <p className="text-sm font-semibold">
+          {keyName(selectedKey, 'unicode')} の調号（表の行を押すと切り替わります）
+        </p>
+        <div className="mt-1 max-w-xs">
+          <Staff groups={[[tonicPitch]]} musicalKey={selectedKey} clef="treble" ariaLabel={`${keyName(selectedKey)} の調号`} />
+        </div>
+      </div>
     <div className="overflow-x-auto">
       <table className="w-full min-w-[22rem] text-sm">
         <thead className="text-left text-xs text-slate-500 dark:text-slate-400">
@@ -41,9 +55,15 @@ export function KeySignatureTable({ diagram }: { diagram: Extract<Diagram, { kin
           {keys.map((k) => {
             const sig = keySignature(k);
             return (
-              <tr key={keyName(k)} className="border-t border-slate-100 dark:border-slate-800">
+              <tr
+                key={keyName(k)}
+                onClick={() => setSelected(keyName(k))}
+                className={`cursor-pointer border-t border-slate-100 dark:border-slate-800 ${selected === keyName(k) ? 'bg-brand-50 dark:bg-brand-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`}
+              >
                 <td className="py-1.5 font-semibold">
-                  {keyName(k, 'unicode')}
+                  <button type="button" onClick={() => setSelected(keyName(k))} aria-pressed={selected === keyName(k)} className="text-left">
+                    {keyName(k, 'unicode')}
+                  </button>
                   <span className="ml-1 text-xs font-normal text-slate-500">{keyNameJa(k)}</span>
                 </td>
                 <td className="py-1.5">{sig.count === 0 ? 'なし' : sig.count > 0 ? `♯ ${sig.count}個` : `♭ ${-sig.count}個`}</td>
@@ -54,6 +74,7 @@ export function KeySignatureTable({ diagram }: { diagram: Extract<Diagram, { kin
           })}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }
@@ -102,6 +123,9 @@ export function ChordBuilder({ diagram }: { diagram: Extract<Diagram, { kind: 'c
           </li>
         ))}
       </ul>
+      <div className="max-w-xs">
+        <Staff groups={[pitches]} ariaLabel={`${symbol} の五線譜`} showNames={false} />
+      </div>
       <PianoKeyboard from={from} to={to} marks={marks} cLabel={fmt} keyName={fmt} ariaLabel={`${symbol} の鍵盤`} />
       <div className="flex flex-wrap gap-1.5">
         <button type="button" onClick={() => void audio.chord(midis)} className="min-h-11 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700">
@@ -183,6 +207,12 @@ export function DiatonicTable({ diagram }: { diagram: Extract<Diagram, { kind: '
   const scale: ScaleId | undefined = diagram.scale;
   const chords = diatonicChords(key, { sevenths, scale });
   const notes = scaleNotes(key.tonic, scale ?? (diagram.mode === 'major' ? 'major' : 'naturalMinor'));
+  // 五線譜用：主音から順に上へ並べた基本形のコード
+  let octave = letterIndex(key.tonic.letter) >= letterIndex('A') ? 3 : 4;
+  const staffGroups = chords.map((c, i) => {
+    if (i > 0 && letterIndex(c.root.letter) < letterIndex(chords[i - 1]!.root.letter)) octave += 1;
+    return chordPitches({ ...c.root, octave }, c.quality);
+  });
 
   const playAll = () =>
     void audio.playSequence(
@@ -214,6 +244,7 @@ export function DiatonicTable({ diagram }: { diagram: Extract<Diagram, { kind: '
       <p className="text-xs text-slate-500 dark:text-slate-400">
         {keyName(key, 'unicode')} のスケール：{notes.map((p) => u(p, 'unicode')).join(' ')}
       </p>
+      <Staff groups={staffGroups} musicalKey={key} clef="treble" showNames={false} ariaLabel={`${keyName(key)} のダイアトニックコード`} />
       <div className="overflow-x-auto">
         <table className="w-full min-w-[20rem] text-sm">
           <thead className="text-left text-xs text-slate-500 dark:text-slate-400">

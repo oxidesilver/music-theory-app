@@ -36,6 +36,7 @@ import {
 import { SCALES, scaleNotes } from '@/theory/scale';
 import { useFavorites } from './useFavorites';
 import { useEditor } from '@/features/progression/editorStore';
+import { Staff } from '@/components/Staff/Staff';
 
 const ROOT_OPTIONS = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
 
@@ -155,6 +156,9 @@ export function ChordDictionaryPage() {
               />
               <div className="mt-2">
                 <KeyMarkLegend kinds={['root', 'chord']} />
+              </div>
+              <div className="mt-3 max-w-xs">
+                <Staff groups={[pitches]} showNames={false} ariaLabel={`${symbol} の五線譜`} />
               </div>
             </div>
 
